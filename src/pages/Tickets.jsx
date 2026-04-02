@@ -1,0 +1,100 @@
+import React, { useState, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
+import Layout from '../components/Layout';
+import '../styles/Services.css';
+import { mockStorage } from '../services/mockStorage';
+
+const TicketsContent = () => {
+  const navigate = useNavigate();
+  const [searchTerm, setSearchTerm] = useState('');
+  const [filterStatus, setFilterStatus] = useState('All');
+  const [tickets, setTickets] = useState([]);
+
+  useEffect(() => {
+    setTickets(mockStorage.getAll('tickets'));
+  }, []);
+
+
+  const filteredTickets = tickets.filter(t => {
+    const matchesSearch = t.user.toLowerCase().includes(searchTerm.toLowerCase()) || 
+                         t.issue.toLowerCase().includes(searchTerm.toLowerCase()) ||
+                         t.id.toLowerCase().includes(searchTerm.toLowerCase());
+    const matchesStatus = filterStatus === 'All' || t.status === filterStatus.toLowerCase();
+    return matchesSearch && matchesStatus;
+  });
+
+  return (
+    <div className="search-container">
+      <div className="search-header">
+        <h2>Support Tickets</h2>
+        <div className="search-bar">
+          <input 
+            type="text" 
+            placeholder="Search tickets by ID, user or issue..." 
+            value={searchTerm}
+            onChange={(e) => setSearchTerm(e.target.value)}
+          />
+        </div>
+        <div className="filter-group">
+          {['All', 'Open', 'In-Progress', 'Resolved'].map(status => (
+            <div 
+              key={status} 
+              className={`filter-tag ${filterStatus === status ? 'active' : ''}`}
+              onClick={() => setFilterStatus(status)}
+            >
+              {status}
+            </div>
+          ))}
+        </div>
+      </div>
+
+      <div className="glass" style={{ borderRadius: '24px', overflow: 'hidden' }}>
+        <table style={{ width: '100%', borderCollapse: 'collapse', textAlign: 'left' }}>
+          <thead style={{ background: 'rgba(255, 255, 255, 0.05)', color: 'var(--text-dim)', fontSize: '0.9rem', textTransform: 'uppercase' }}>
+            <tr>
+              <th style={{ padding: '20px' }}>Ticket ID</th>
+              <th style={{ padding: '20px' }}>User</th>
+              <th style={{ padding: '20px' }}>Issue</th>
+              <th style={{ padding: '20px' }}>Category</th>
+              <th style={{ padding: '20px' }}>Status</th>
+              <th style={{ padding: '20px' }}>Actions</th>
+            </tr>
+          </thead>
+          <tbody>
+            {filteredTickets.map((ticket) => (
+              <tr key={ticket.id} style={{ borderBottom: '1px solid rgba(255, 255, 255, 0.05)' }}>
+                <td style={{ padding: '20px', color: 'var(--primary)', fontWeight: '700' }}>{ticket.id}</td>
+                <td style={{ padding: '20px' }}>{ticket.user}</td>
+                <td style={{ padding: '20px', maxWidth: '250px', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{ticket.issue}</td>
+                <td style={{ padding: '20px' }}>{ticket.category}</td>
+                <td style={{ padding: '20px' }}>
+                  <span style={{ 
+                    padding: '4px 8px', 
+                    borderRadius: '6px', 
+                    fontSize: '0.75rem', 
+                    fontWeight: '800',
+                    background: ticket.status === 'open' ? 'rgba(255, 0, 0, 0.1)' : ticket.status === 'in-progress' ? 'var(--primary-glow)' : 'var(--success)',
+                    color: ticket.status === 'resolved' ? 'white' : ticket.status === 'open' ? 'var(--error)' : 'var(--primary)'
+                  }}>
+                    {ticket.status.toUpperCase()}
+                  </span>
+                </td>
+                <td style={{ padding: '20px' }}>
+                  <button className="btn btn-primary" style={{ padding: '6px 12px', fontSize: '0.8rem' }} onClick={() => navigate(`/ticket-details`, { state: { ticket } })}>View</button>
+                </td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
+    </div>
+  );
+};
+
+const Tickets = () => (
+  <Layout>
+    <TicketsContent />
+  </Layout>
+);
+
+export default Tickets;

@@ -1,0 +1,94 @@
+import React, { useState } from 'react';
+import Layout from '../components/Layout';
+import '../styles/Services.css';
+import { mockStorage } from '../services/mockStorage';
+import { useAuth } from '../context/AuthContext';
+
+const FeedbackContent = () => {
+  const { user } = useAuth();
+  const [rating, setRating] = useState(0);
+  const [comment, setComment] = useState('');
+  const [submitted, setSubmitted] = useState(false);
+
+  const handleSubmit = (e) => {
+    e.preventDefault();
+    mockStorage.addItem('feedback', { 
+      userId: user?.id, 
+      userName: user?.name, 
+      rating, 
+      comment, 
+      date: new Date().toISOString() 
+    });
+    setSubmitted(true);
+  };
+
+
+  return (
+    <div className="search-container">
+      <div className="search-header">
+        <h2>Service Feedback</h2>
+        <p>Your reviews help us improve our service standards.</p>
+      </div>
+
+      <div className="glass" style={{ padding: '40px', maxWidth: '600px', margin: '0 auto', width: '100%', textAlign: 'center' }}>
+        {!submitted ? (
+          <form className="auth-form" onSubmit={handleSubmit}>
+            <div style={{ marginBottom: '20px' }}>
+              <p style={{ marginBottom: '10px', color: 'var(--text-dim)' }}>How was your experience?</p>
+              <div style={{ display: 'flex', justifyContent: 'center', gap: '15px' }}>
+                {[1, 2, 3, 4, 5].map(star => (
+                  <span 
+                    key={star} 
+                    style={{ 
+                      fontSize: '2.5rem', 
+                      cursor: 'pointer', 
+                      color: star <= rating ? '#FFD700' : 'rgba(255, 255, 255, 0.1)'
+                    }}
+                    onClick={() => setRating(star)}
+                  >
+                    ★
+                  </span>
+                ))}
+              </div>
+            </div>
+
+            <div className="input-group">
+              <label>Tell us more about it</label>
+              <textarea 
+                placeholder="Share your experience with the professional..."
+                style={{ 
+                  background: 'rgba(255, 255, 255, 0.05)', 
+                  border: '1px solid rgba(255, 255, 255, 0.1)', 
+                  borderRadius: '12px', 
+                  padding: '15px', 
+                  color: 'white', 
+                  minHeight: '150px' 
+                }}
+                value={comment}
+                onChange={(e) => setComment(e.target.value)}
+                required
+              />
+            </div>
+
+            <button type="submit" className="btn btn-primary" style={{ marginTop: '20px' }}>Submit Review</button>
+          </form>
+        ) : (
+          <div style={{ padding: '20px 0' }}>
+            <div style={{ fontSize: '4rem', marginBottom: '20px' }}>❤️</div>
+            <h3>Thank you for your feedback!</h3>
+            <p style={{ color: 'var(--text-dim)', marginTop: '10px' }}>We appreciate your honest opinion.</p>
+            <button className="btn btn-primary" style={{ marginTop: '30px' }} onClick={() => setSubmitted(false)}>Submit Another Review</button>
+          </div>
+        )}
+      </div>
+    </div>
+  );
+};
+
+const Feedback = () => (
+  <Layout>
+    <FeedbackContent />
+  </Layout>
+);
+
+export default Feedback;
