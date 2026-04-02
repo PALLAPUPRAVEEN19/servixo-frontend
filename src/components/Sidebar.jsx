@@ -1,4 +1,3 @@
-import React from 'react';
 import { NavLink } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import '../styles/Sidebar.css';
@@ -10,7 +9,9 @@ const Sidebar = () => {
     { name: 'Dashboard', path: '/dashboard' },
     { name: 'Services', path: '/services' },
     { name: 'Bookings', path: '/bookings' },
-    { name: 'Feedback', path: '/feedback' }
+    { name: 'Feedback', path: '/feedback' },
+    { name: 'Raise Ticket', path: '/raise-ticket' },
+    { name: 'My Tickets', path: '/my-tickets' }
   ];
 
   const adminLinks = [
@@ -18,6 +19,7 @@ const Sidebar = () => {
     { name: 'Users', path: '/manage-users' },
     { name: 'Services', path: '/manage-services' },
     { name: 'Revenue', path: '/revenue' },
+    { name: 'Tickets', path: '/admin-tickets' },
     { name: 'Settings', path: '/settings' }
   ];
 

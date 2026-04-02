@@ -1,22 +1,16 @@
-import React, { useState, useEffect } from 'react';
+import { useState } from 'react';
 import { useAuth } from '../context/AuthContext';
 import Layout from '../components/Layout';
-import { mockStorage } from '../services/mockStorage';
 import '../styles/Services.css';
 import '../styles/Profile.css';
 
 const ProServicesContent = () => {
   const { user } = useAuth();
+  // TODO: Fetch services from API
   const [services, setServices] = useState([]);
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [editingService, setEditingService] = useState(null);
   const [formData, setFormData] = useState({ name: '', category: '', price: '' });
-
-  useEffect(() => {
-    const allServices = mockStorage.getAll('services');
-    const proServices = allServices.filter(s => s.proId === user?.id);
-    setServices(proServices);
-  }, [user]);
 
   const handleOpenModal = (service = null) => {
     if (service) {
@@ -31,26 +25,27 @@ const ProServicesContent = () => {
 
   const handleSave = (e) => {
     e.preventDefault();
+    // TODO: Replace with real API call
     if (editingService) {
-      mockStorage.updateItem('services', editingService.id, { ...formData, price: `$${formData.price}` });
+      setServices(services.map(s => s.id === editingService.id ? { ...s, ...formData, price: `$${formData.price}` } : s));
     } else {
-      mockStorage.addItem('services', { 
-        ...formData, 
-        price: `$${formData.price}`, 
+      const newService = {
+        ...formData,
+        id: `SVC-${Date.now()}`,
+        price: `$${formData.price}`,
         proId: user?.id,
-        proName: user?.name, 
-        status: 'pending' 
-      });
+        proName: user?.name,
+        status: 'pending'
+      };
+      setServices([...services, newService]);
     }
-    setServices(mockStorage.getAll('services').filter(s => s.proId === user?.id));
     setIsModalOpen(false);
   };
 
   const deleteService = (id) => {
-    mockStorage.deleteItem('services', id);
-    setServices(mockStorage.getAll('services').filter(s => s.proId === user?.id));
+    // TODO: Replace with real API call
+    setServices(services.filter(s => s.id !== id));
   };
-
 
   return (
     <div className="profile-page-container">
@@ -74,11 +69,11 @@ const ProServicesContent = () => {
             </tr>
           </thead>
           <tbody>
-            {services.map((service) => (
+            {services.length > 0 ? services.map((service) => (
               <tr key={service.id} style={{ borderBottom: '1px solid rgba(255, 255, 255, 0.05)' }}>
                 <td style={{ padding: '20px', fontWeight: '600', color: 'var(--text-main)' }}>{service.name}</td>
                 <td style={{ padding: '20px', color: 'var(--text-dim)' }}>{service.category}</td>
-                <td style={{ padding: '20px', fontWeight: '800', color: 'var(--primary)' }}>${service.price}</td>
+                <td style={{ padding: '20px', fontWeight: '800', color: 'var(--primary)' }}>{service.price}</td>
                 <td style={{ padding: '20px' }}>
                   <span style={{ 
                     padding: '6px 12px', 
@@ -96,7 +91,11 @@ const ProServicesContent = () => {
                   <button className="btn" style={{ padding: '6px 15px', fontSize: '0.8rem', background: 'rgba(255, 71, 87, 0.1)', color: 'var(--error)' }} onClick={() => deleteService(service.id)}>Delete</button>
                 </td>
               </tr>
-            ))}
+            )) : (
+              <tr>
+                <td colSpan="5" style={{ padding: '40px', textAlign: 'center', color: 'var(--text-dim)' }}>No services listed yet. Click "+ Add New Service" to get started.</td>
+              </tr>
+            )}
           </tbody>
         </table>
       </div>

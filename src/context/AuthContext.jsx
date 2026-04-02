@@ -1,5 +1,4 @@
-import React, { createContext, useState, useContext, useEffect } from 'react';
-import { mockStorage } from '../services/mockStorage';
+import { createContext, useState, useContext, useEffect } from 'react';
 
 const AuthContext = createContext();
 
@@ -8,10 +7,6 @@ export const AuthProvider = ({ children }) => {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    // Initialize the DB from localStorage 
-    mockStorage.initDB();
-    
-    // Check for an existing session
     const storedUser = localStorage.getItem('servixo_user');
     if (storedUser) {
       setUser(JSON.parse(storedUser));
@@ -20,19 +15,17 @@ export const AuthProvider = ({ children }) => {
   }, []);
 
   const login = (email, password, role) => {
-    const users = mockStorage.getAll('users');
-    const existingUser = users.find(u => u.email === email && u.password === password && u.role === role);
-    
-    if (existingUser) {
-      setUser(existingUser);
-      localStorage.setItem('servixo_user', JSON.stringify(existingUser));
-      return true;
-    }
-    return false;
+    if (!email || !password) return false;
+    // TODO: Replace with real API call
+    const loggedInUser = { id: Date.now().toString(), name: email.split('@')[0], email, role };
+    setUser(loggedInUser);
+    localStorage.setItem('servixo_user', JSON.stringify(loggedInUser));
+    return true;
   };
 
   const signup = (userData) => {
-    const newUser = mockStorage.addItem('users', userData);
+    // TODO: Replace with real API call
+    const newUser = { ...userData, id: Date.now().toString() };
     setUser(newUser);
     localStorage.setItem('servixo_user', JSON.stringify(newUser));
     return newUser;

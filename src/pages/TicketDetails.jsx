@@ -1,30 +1,72 @@
-import React, { useState, useEffect } from 'react';
-import { useLocation } from 'react-router-dom';
+import { useState } from 'react';
+import { useLocation, useNavigate } from 'react-router-dom';
+import { useAuth } from '../context/AuthContext';
+import { useTickets } from '../context/TicketContext';
 import Layout from '../components/Layout';
 import Toast from '../components/Toast';
 import '../styles/Services.css';
-import { mockStorage } from '../services/mockStorage';
 
 const TicketDetailsContent = () => {
   const location = useLocation();
-  const [ticket, setTicket] = useState(location.state?.ticket || mockStorage.getAll('tickets')[0]);
-  const [status, setStatus] = useState(ticket?.status || 'open');
-  const [priority, setPriority] = useState(ticket?.priority || 'high');
+  const navigate = useNavigate();
+  const { user } = useAuth();
+  const { tickets, updateTicket, addMessage } = useTickets();
+  const [newMessage, setNewMessage] = useState('');
   const [showToast, setShowToast] = useState(false);
 
+  const ticketFromState = location.state?.ticket;
+  const ticket = tickets.find(t => t.id === ticketFromState?.id) || ticketFromState;
+
+  if (!ticket) {
+    return (
+      <div className="search-container" style={{ textAlign: 'center', padding: '80px 20px' }}>
+        <h2>Ticket not found</h2>
+        <button className="btn btn-primary" style={{ marginTop: '20px' }} onClick={() => navigate('/tickets')}>Back to Tickets</button>
+      </div>
+    );
+  }
+
+  const [status, setStatus] = useState(ticket?.status || 'open');
+  const [priority, setPriority] = useState(ticket?.priority || 'medium');
+
   const handleUpdate = () => {
-    mockStorage.updateItem('tickets', ticket.id, { status, priority });
+    updateTicket(ticket.id, { status, priority });
     setShowToast(true);
   };
 
+  const handleSendMessage = (e) => {
+    e.preventDefault();
+    if (!newMessage.trim()) return;
+    const role = user?.role === 'admin' ? 'admin' : 'support';
+    addMessage(ticket.id, {
+      sender: user?.name || 'Support Agent',
+      role,
+      text: newMessage.trim()
+    });
+    setNewMessage('');
+  };
+
+  const formatTime = (iso) => {
+    if (!iso) return '';
+    const d = new Date(iso);
+    return d.toLocaleString('en-US', { month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' });
+  };
+
+  const formatDate = (iso) => {
+    if (!iso) return 'N/A';
+    return new Date(iso).toLocaleString('en-US', { year: 'numeric', month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' });
+  };
 
   return (
     <div className="search-container">
       <div className="search-header">
-        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '15px' }}>
           <div>
-            <h2>Ticket: {ticket?.id || 'TIC-LOAD'}</h2>
-            <p style={{ color: 'var(--text-dim)' }}>User: {ticket?.user || 'Unknown'} | Category: {ticket?.category || 'None'}</p>
+            <button className="btn" style={{ background: 'rgba(255,255,255,0.05)', padding: '6px 15px', fontSize: '0.8rem', marginBottom: '15px' }} onClick={() => navigate('/tickets')}>← Back to Tickets</button>
+            <h2>Ticket: {ticket.id}</h2>
+            <p style={{ color: 'var(--text-dim)' }}>
+              Raised by: <strong>{ticket.userName}</strong> ({ticket.userEmail}) | Category: {ticket.category}
+            </p>
           </div>
           <button className="btn btn-primary" onClick={handleUpdate}>Update Ticket</button>
         </div>
@@ -32,31 +74,52 @@ const TicketDetailsContent = () => {
 
       <div style={{ display: 'grid', gridTemplateColumns: '2fr 1fr', gap: '30px' }}>
         {/* Conversation */}
-        <div className="glass" style={{ padding: '30px', borderRadius: '24px', display: 'flex', flexDirection: 'column', gap: '20px' }}>
-          <h3>Message History</h3>
-          <div style={{ padding: '20px', background: 'rgba(255, 255, 255, 0.03)', borderRadius: '15px' }}>
-            <div style={{ fontWeight: '700', marginBottom: '5px' }}>John Doe <span style={{ fontWeight: 'normal', color: 'var(--text-dim)', fontSize: '0.8rem' }}>• 2 hours ago</span></div>
-            <p>I tried to pay for the plumbing service twice but both times it said "Payment failed". However, my bank account shows the amount was deducted twice. Please help!</p>
-          </div>
-          <div style={{ padding: '20px', background: 'var(--primary-glow)', borderRadius: '15px', alignSelf: 'flex-end', maxWidth: '80%' }}>
-            <div style={{ fontWeight: '700', marginBottom: '5px' }}>System Bot <span style={{ fontWeight: 'normal', color: 'var(--text-dim)', fontSize: '0.8rem' }}>• 1 hour ago</span></div>
-            <p>Ticket created and assigned to support team. We will review your transaction logs shortly.</p>
+        <div className="glass" style={{ borderRadius: '24px', overflow: 'hidden', display: 'flex', flexDirection: 'column' }}>
+          <div style={{ padding: '20px 30px', borderBottom: '1px solid rgba(255,255,255,0.05)' }}>
+            <h3 style={{ fontSize: '1rem' }}>Conversation — {ticket.subject}</h3>
           </div>
 
-          <div style={{ marginTop: '20px' }}>
-            <textarea 
-              placeholder="Type your response to the user..."
-              style={{ background: 'rgba(255, 255, 255, 0.05)', border: '1px solid rgba(255, 255, 255, 0.1)', borderRadius: '12px', padding: '15px', color: 'white', minHeight: '150px', width: '100%' }}
-            />
-            <button className="btn btn-primary" style={{ marginTop: '10px' }}>Send Response</button>
+          <div style={{ padding: '25px 30px', display: 'flex', flexDirection: 'column', gap: '20px', flex: 1, maxHeight: '400px', overflowY: 'auto' }}>
+            {(ticket.messages || []).map((msg, i) => (
+              <div key={i} style={{ alignSelf: msg.role === 'user' ? 'flex-start' : 'flex-end', maxWidth: '75%' }}>
+                <div style={{
+                  padding: '14px 20px',
+                  borderRadius: msg.role === 'user' ? '4px 18px 18px 18px' : '18px 18px 4px 18px',
+                  background: msg.role === 'user' ? 'rgba(255,255,255,0.05)' : msg.role === 'admin' ? 'var(--accent)' : 'var(--primary)',
+                  color: msg.role === 'user' ? 'var(--text-main)' : 'white'
+                }}>
+                  <div style={{ fontSize: '0.75rem', fontWeight: '700', marginBottom: '6px', opacity: 0.8 }}>
+                    {msg.sender} {msg.role === 'user' && '(Customer)'} {msg.role === 'support' && '(Support)'} {msg.role === 'admin' && '(Admin)'}
+                  </div>
+                  <p style={{ fontSize: '0.9rem', lineHeight: '1.5' }}>{msg.text}</p>
+                </div>
+                <div style={{ fontSize: '0.65rem', color: 'var(--text-dim)', marginTop: '5px', textAlign: msg.role === 'user' ? 'left' : 'right' }}>
+                  {formatTime(msg.time)}
+                </div>
+              </div>
+            ))}
           </div>
+
+          {/* Reply Box */}
+          <form onSubmit={handleSendMessage} style={{ padding: '20px 30px', borderTop: '1px solid rgba(255,255,255,0.05)', background: 'rgba(0,0,0,0.15)' }}>
+            <div style={{ display: 'flex', gap: '12px' }}>
+              <input
+                type="text"
+                placeholder="Type your reply to the customer..."
+                value={newMessage}
+                onChange={(e) => setNewMessage(e.target.value)}
+                style={{ flex: 1, background: 'rgba(255,255,255,0.05)', border: '1px solid rgba(255,255,255,0.08)', borderRadius: '12px', padding: '12px 18px', color: 'white' }}
+              />
+              <button type="submit" className="btn btn-primary" style={{ padding: '0 25px' }}>Reply</button>
+            </div>
+          </form>
         </div>
 
         {/* Controls */}
         <div className="glass" style={{ padding: '30px', borderRadius: '24px', display: 'flex', flexDirection: 'column', gap: '20px', height: 'fit-content' }}>
-          <h3>Settings</h3>
+          <h3>Ticket Controls</h3>
           <div className="input-group">
-            <label>Current Status</label>
+            <label>Status</label>
             <select value={status} onChange={(e) => setStatus(e.target.value)}>
               <option value="open">Open</option>
               <option value="in-progress">In Progress</option>
@@ -66,7 +129,7 @@ const TicketDetailsContent = () => {
           </div>
 
           <div className="input-group">
-            <label>Priority Level</label>
+            <label>Priority</label>
             <select value={priority} onChange={(e) => setPriority(e.target.value)}>
               <option value="low">Low</option>
               <option value="medium">Medium</option>
@@ -75,14 +138,14 @@ const TicketDetailsContent = () => {
             </select>
           </div>
 
-          <div style={{ marginTop: '20px', paddingTop: '20px', borderTop: '1px solid rgba(255, 255, 255, 0.05)' }}>
+          <div style={{ marginTop: '10px', paddingTop: '20px', borderTop: '1px solid rgba(255, 255, 255, 0.05)' }}>
             <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '10px' }}>
-              <span style={{ color: 'var(--text-dim)' }}>Created</span>
-              <span>2026-04-01 15:30</span>
+              <span style={{ color: 'var(--text-dim)', fontSize: '0.85rem' }}>Created</span>
+              <span style={{ fontSize: '0.85rem' }}>{formatDate(ticket.createdAt)}</span>
             </div>
             <div style={{ display: 'flex', justifyContent: 'space-between' }}>
-              <span style={{ color: 'var(--text-dim)' }}>Last Updated</span>
-              <span>2026-04-01 16:45</span>
+              <span style={{ color: 'var(--text-dim)', fontSize: '0.85rem' }}>Messages</span>
+              <span style={{ fontSize: '0.85rem' }}>{(ticket.messages || []).length}</span>
             </div>
           </div>
         </div>

@@ -1,9 +1,8 @@
-import React, { useState } from 'react';
+import { useState } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
 import Layout from '../components/Layout';
 import '../styles/Services.css';
 import '../styles/Profile.css';
-import { mockStorage } from '../services/mockStorage';
 import { useAuth } from '../context/AuthContext';
 
 const BookingFormContent = () => {
@@ -43,29 +42,9 @@ const BookingFormContent = () => {
       alert('Please fill in all required fields.');
       return;
     }
-
-    const priceNum = parseFloat(service.price.replace('$', ''));
-    const totalPrice = priceNum + 5;
-    
-    const newBooking = {
-      userId: user?.id || 'guest',
-      userName: user?.name || 'Guest User',
-      proId: service.proId,
-      proName: service.proName,
-      service: service.name,
-      date: bookingData.date,
-      time: bookingData.time,
-      address: bookingData.address,
-      description: bookingData.description,
-      amount: `$${totalPrice}.00`,
-      status: 'pending' // Changed to pending so Pro can approve
-    };
-    
-    mockStorage.addItem('bookings', newBooking);
-    
+    // TODO: Replace with real API call to create booking
     setStep(4);
   };
-
 
   return (
     <div className="profile-page-container">

@@ -1,5 +1,5 @@
-import React from 'react';
 import { Routes, Route, Navigate } from 'react-router-dom';
+import LandingPage from './pages/LandingPage';
 import Login from './pages/Login';
 import Signup from './pages/Signup';
 import ServiceSearch from './pages/ServiceSearch';
@@ -7,6 +7,9 @@ import BookingForm from './pages/BookingForm';
 import Bookings from './pages/Bookings';
 import Feedback from './pages/Feedback';
 import Profile from './pages/Profile';
+import RaiseTicket from './pages/RaiseTicket';
+import MyTickets from './pages/MyTickets';
+import MyTicketDetail from './pages/MyTicketDetail';
 import ManageUsers from './pages/ManageUsers';
 import ManageServices from './pages/ManageServices';
 import Revenue from './pages/Revenue';
@@ -47,6 +50,9 @@ function App() {
         <Route path="/bookings" element={<Bookings />} />
         <Route path="/feedback" element={<Feedback />} />
         <Route path="/profile" element={<Profile />} />
+        <Route path="/raise-ticket" element={<RaiseTicket />} />
+        <Route path="/my-tickets" element={<MyTickets />} />
+        <Route path="/my-ticket-detail" element={<MyTicketDetail />} />
       </Route>
 
       {/* Admin Routes */}
@@ -56,6 +62,8 @@ function App() {
         <Route path="/manage-services" element={<ManageServices />} />
         <Route path="/revenue" element={<Revenue />} />
         <Route path="/settings" element={<SystemSettings />} />
+        <Route path="/admin-tickets" element={<Tickets />} />
+        <Route path="/admin-ticket-details" element={<TicketDetails />} />
       </Route>
 
       {/* Professional Routes */}
@@ -78,9 +86,9 @@ function App() {
         <Route path="/kb" element={<KnowledgeBase />} />
       </Route>
 
-      {/* Generic Redirects */}
-      <Route path="/" element={<Navigate to="/login" replace />} />
-      <Route path="*" element={<Navigate to="/login" replace />} />
+      {/* Public Landing */}
+      <Route path="/" element={<LandingPage />} />
+      <Route path="*" element={<Navigate to="/" replace />} />
     </Routes>
   );
 }

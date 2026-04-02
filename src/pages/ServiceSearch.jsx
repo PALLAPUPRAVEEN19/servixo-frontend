@@ -1,7 +1,6 @@
-import React, { useState, useEffect } from 'react';
+import { useState } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import Layout from '../components/Layout';
-import { mockStorage } from '../services/mockStorage';
 
 const categories = ['All', 'Plumbing', 'Cleaning', 'Electrician', 'Painting', 'Outdoor', 'Education', 'Logistics'];
 
@@ -9,20 +8,9 @@ const ServiceSearchContent = () => {
   const navigate = useNavigate();
   const location = useLocation();
   const [searchTerm, setSearchTerm] = useState('');
-  const [selectedCategory, setSelectedCategory] = useState('All');
-  const [services, setServices] = useState([]);
-
-  useEffect(() => {
-    const allServices = mockStorage.getAll('services');
-    const approved = allServices.filter(s => s.status === 'approved');
-    setServices(approved);
-  }, []);
-
-  useEffect(() => {
-    if (location.state?.category) {
-      setSelectedCategory(location.state.category);
-    }
-  }, [location]);
+  const [selectedCategory, setSelectedCategory] = useState(location.state?.category || 'All');
+  // TODO: Fetch services from API
+  const [services] = useState([]);
 
   const filteredServices = services.filter(service => {
     const matchesSearch = service.name.toLowerCase().includes(searchTerm.toLowerCase()) || 

@@ -1,26 +1,10 @@
-import React, { useState, useEffect } from 'react';
+import { useState } from 'react';
 import Layout from '../components/Layout';
 import '../styles/Services.css';
-import { mockStorage } from '../services/mockStorage';
-import { useAuth } from '../context/AuthContext';
 
 const BookingsContent = () => {
-  const [bookings, setBookings] = useState([]);
-  const { user } = useAuth();
-
-  useEffect(() => {
-    const allBookings = mockStorage.getAll('bookings');
-    const userBookings = allBookings.filter(b => b.userId === user?.id);
-    setBookings(userBookings);
-  }, [user]);
-
-  const handleCancel = (id) => {
-    mockStorage.updateItem('bookings', id, { status: 'cancelled' });
-    const allBookings = mockStorage.getAll('bookings');
-    const userBookings = allBookings.filter(b => b.userId === user?.id);
-    setBookings(userBookings);
-  };
-
+  // TODO: Fetch bookings from API
+  const [bookings] = useState([]);
 
   return (
     <div className="search-container">
@@ -65,9 +49,6 @@ const BookingsContent = () => {
                   </td>
                   <td style={{ padding: '20px', display: 'flex', gap: '10px' }}>
                     <button className="btn" style={{ padding: '8px 12px', fontSize: '0.8rem', background: 'rgba(255, 255, 255, 0.05)' }}>View</button>
-                    {booking.status === 'upcoming' && (
-                      <button className="btn" style={{ padding: '8px 12px', fontSize: '0.8rem', background: 'rgba(255, 0, 0, 0.1)', color: 'var(--error)' }} onClick={() => handleCancel(booking.id)}>Cancel</button>
-                    )}
                   </td>
                 </tr>
               ))

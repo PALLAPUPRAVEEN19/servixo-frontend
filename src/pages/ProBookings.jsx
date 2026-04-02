@@ -1,27 +1,12 @@
-import React, { useState, useEffect } from 'react';
+import { useState } from 'react';
 import Layout from '../components/Layout';
 import '../styles/Services.css';
-import { mockStorage } from '../services/mockStorage';
 import { useAuth } from '../context/AuthContext';
 
 const ProBookingsContent = () => {
-  const [requests, setRequests] = useState([]);
+  // TODO: Fetch bookings from API
+  const [requests] = useState([]);
   const { user } = useAuth();
-
-  useEffect(() => {
-    const allBookings = mockStorage.getAll('bookings');
-    // Using ID if available, otherwise name for legacy/fallback
-    const proRequests = allBookings.filter(b => b.proId === user?.id || b.proName === user?.name);
-    setRequests(proRequests);
-  }, [user]);
-
-  const updateStatus = (id, status) => {
-    mockStorage.updateItem('bookings', id, { status });
-    const allBookings = mockStorage.getAll('bookings');
-    const proRequests = allBookings.filter(b => b.proId === user?.id || b.proName === user?.name);
-    setRequests(proRequests);
-  };
-
 
   return (
     <div className="search-container">
@@ -42,7 +27,7 @@ const ProBookingsContent = () => {
             </tr>
           </thead>
           <tbody>
-            {requests.map((request) => (
+            {requests.length > 0 ? requests.map((request) => (
               <tr key={request.id} style={{ borderBottom: '1px solid rgba(255, 255, 255, 0.05)' }}>
                 <td style={{ padding: '20px', fontWeight: '600' }}>{request.user}</td>
                 <td style={{ padding: '20px' }}>{request.service}</td>
@@ -60,21 +45,15 @@ const ProBookingsContent = () => {
                   </span>
                 </td>
                 <td style={{ padding: '20px', display: 'flex', gap: '8px' }}>
-                  {request.status === 'pending' && (
-                    <>
-                      <button className="btn btn-primary" style={{ padding: '6px 12px', fontSize: '0.8rem' }} onClick={() => updateStatus(request.id, 'approved')}>Accept</button>
-                      <button className="btn" style={{ padding: '6px 12px', fontSize: '0.8rem', background: 'rgba(255, 0, 0, 0.1)', color: 'var(--error)' }} onClick={() => updateStatus(request.id, 'rejected')}>Reject</button>
-                    </>
-                  )}
-                  {request.status === 'approved' && (
-                    <button className="btn" style={{ padding: '6px 12px', fontSize: '0.8rem', background: 'var(--success)', color: 'white' }} onClick={() => updateStatus(request.id, 'completed')}>Mark Completed</button>
-                  )}
-                  {request.status === 'completed' && (
-                    <span style={{ color: 'var(--success)', fontSize: '0.9rem', fontWeight: '700' }}>Completed ✓</span>
-                  )}
+                  <button className="btn btn-primary" style={{ padding: '6px 12px', fontSize: '0.8rem' }}>Accept</button>
+                  <button className="btn" style={{ padding: '6px 12px', fontSize: '0.8rem', background: 'rgba(255, 0, 0, 0.1)', color: 'var(--error)' }}>Reject</button>
                 </td>
               </tr>
-            ))}
+            )) : (
+              <tr>
+                <td colSpan="5" style={{ padding: '40px', textAlign: 'center', color: 'var(--text-dim)' }}>No job requests yet.</td>
+              </tr>
+            )}
           </tbody>
         </table>
       </div>

@@ -1,27 +1,17 @@
-import React, { useState, useEffect } from 'react';
+import { useState } from 'react';
 import Layout from '../components/Layout';
 import '../styles/Dashboard.css';
-import { mockStorage } from '../services/mockStorage';
 
 const AnalyticsContent = () => {
-  const [ticketStats, setTicketStats] = useState([]);
   const barData = [30, 45, 60, 25, 80, 55, 40];
   const days = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
 
-  useEffect(() => {
-    const tickets = mockStorage.getAll('tickets');
-    const categories = ['Payment', 'Technical', 'Account', 'Service'];
-    const stats = categories.map(cat => {
-      const count = tickets.filter(t => t.category === cat).length;
-      return { 
-        label: cat, 
-        val: tickets.length ? Math.round((count / tickets.length) * 100) : 0,
-        color: cat === 'Payment' ? 'var(--primary)' : cat === 'Technical' ? 'var(--accent)' : cat === 'Account' ? 'var(--success)' : 'var(--error)'
-      };
-    });
-    setTicketStats(stats);
-  }, []);
-
+  const [ticketStats] = useState([
+    { label: 'Payment', val: 35, color: 'var(--primary)' },
+    { label: 'Technical', val: 28, color: 'var(--accent)' },
+    { label: 'Account', val: 22, color: 'var(--success)' },
+    { label: 'Service', val: 15, color: 'var(--error)' },
+  ]);
 
   return (
     <div className="search-container">

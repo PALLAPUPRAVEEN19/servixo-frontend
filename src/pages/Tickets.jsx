@@ -1,24 +1,19 @@
-import React, { useState, useEffect } from 'react';
+import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { useTickets } from '../context/TicketContext';
 import Layout from '../components/Layout';
 import '../styles/Services.css';
-import { mockStorage } from '../services/mockStorage';
 
 const TicketsContent = () => {
   const navigate = useNavigate();
+  const { tickets } = useTickets();
   const [searchTerm, setSearchTerm] = useState('');
   const [filterStatus, setFilterStatus] = useState('All');
-  const [tickets, setTickets] = useState([]);
-
-  useEffect(() => {
-    setTickets(mockStorage.getAll('tickets'));
-  }, []);
-
 
   const filteredTickets = tickets.filter(t => {
-    const matchesSearch = t.user.toLowerCase().includes(searchTerm.toLowerCase()) || 
-                         t.issue.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                         t.id.toLowerCase().includes(searchTerm.toLowerCase());
+    const matchesSearch = (t.userName || '').toLowerCase().includes(searchTerm.toLowerCase()) || 
+                         (t.subject || '').toLowerCase().includes(searchTerm.toLowerCase()) ||
+                         (t.id || '').toLowerCase().includes(searchTerm.toLowerCase());
     const matchesStatus = filterStatus === 'All' || t.status === filterStatus.toLowerCase();
     return matchesSearch && matchesStatus;
   });
@@ -30,13 +25,13 @@ const TicketsContent = () => {
         <div className="search-bar">
           <input 
             type="text" 
-            placeholder="Search tickets by ID, user or issue..." 
+            placeholder="Search tickets by ID, user or subject..." 
             value={searchTerm}
             onChange={(e) => setSearchTerm(e.target.value)}
           />
         </div>
         <div className="filter-group">
-          {['All', 'Open', 'In-Progress', 'Resolved'].map(status => (
+          {['All', 'Open', 'In-Progress', 'Resolved', 'Closed'].map(status => (
             <div 
               key={status} 
               className={`filter-tag ${filterStatus === status ? 'active' : ''}`}
@@ -54,18 +49,18 @@ const TicketsContent = () => {
             <tr>
               <th style={{ padding: '20px' }}>Ticket ID</th>
               <th style={{ padding: '20px' }}>User</th>
-              <th style={{ padding: '20px' }}>Issue</th>
+              <th style={{ padding: '20px' }}>Subject</th>
               <th style={{ padding: '20px' }}>Category</th>
               <th style={{ padding: '20px' }}>Status</th>
               <th style={{ padding: '20px' }}>Actions</th>
             </tr>
           </thead>
           <tbody>
-            {filteredTickets.map((ticket) => (
+            {filteredTickets.length > 0 ? filteredTickets.map((ticket) => (
               <tr key={ticket.id} style={{ borderBottom: '1px solid rgba(255, 255, 255, 0.05)' }}>
-                <td style={{ padding: '20px', color: 'var(--primary)', fontWeight: '700' }}>{ticket.id}</td>
-                <td style={{ padding: '20px' }}>{ticket.user}</td>
-                <td style={{ padding: '20px', maxWidth: '250px', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{ticket.issue}</td>
+                <td style={{ padding: '20px', color: 'var(--primary)', fontWeight: '700', fontFamily: 'monospace' }}>{ticket.id}</td>
+                <td style={{ padding: '20px' }}>{ticket.userName}</td>
+                <td style={{ padding: '20px', maxWidth: '250px', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{ticket.subject}</td>
                 <td style={{ padding: '20px' }}>{ticket.category}</td>
                 <td style={{ padding: '20px' }}>
                   <span style={{ 
@@ -73,17 +68,21 @@ const TicketsContent = () => {
                     borderRadius: '6px', 
                     fontSize: '0.75rem', 
                     fontWeight: '800',
-                    background: ticket.status === 'open' ? 'rgba(255, 0, 0, 0.1)' : ticket.status === 'in-progress' ? 'var(--primary-glow)' : 'var(--success)',
-                    color: ticket.status === 'resolved' ? 'white' : ticket.status === 'open' ? 'var(--error)' : 'var(--primary)'
+                    background: ticket.status === 'open' ? 'rgba(255, 0, 0, 0.1)' : ticket.status === 'in-progress' ? 'var(--primary-glow)' : ticket.status === 'resolved' ? 'var(--success)' : 'rgba(255,255,255,0.08)',
+                    color: ticket.status === 'resolved' ? 'white' : ticket.status === 'open' ? 'var(--error)' : ticket.status === 'closed' ? 'var(--text-dim)' : 'var(--primary)'
                   }}>
                     {ticket.status.toUpperCase()}
                   </span>
                 </td>
                 <td style={{ padding: '20px' }}>
-                  <button className="btn btn-primary" style={{ padding: '6px 12px', fontSize: '0.8rem' }} onClick={() => navigate(`/ticket-details`, { state: { ticket } })}>View</button>
+                  <button className="btn btn-primary" style={{ padding: '6px 12px', fontSize: '0.8rem' }} onClick={() => navigate('/ticket-details', { state: { ticket } })}>View</button>
                 </td>
               </tr>
-            ))}
+            )) : (
+              <tr>
+                <td colSpan="6" style={{ padding: '40px', textAlign: 'center', color: 'var(--text-dim)' }}>No tickets found.</td>
+              </tr>
+            )}
           </tbody>
         </table>
       </div>

@@ -1,20 +1,10 @@
-import React, { useState, useEffect } from 'react';
+import { useState } from 'react';
 import Layout from '../components/Layout';
 import '../styles/Services.css';
-import { mockStorage } from '../services/mockStorage';
 
 const ManageServicesContent = () => {
-  const [services, setServices] = useState([]);
-
-  useEffect(() => {
-    setServices(mockStorage.getAll('services'));
-  }, []);
-
-  const updateStatus = (id, status) => {
-    mockStorage.updateItem('services', id, { status });
-    setServices(mockStorage.getAll('services'));
-  };
-
+  // TODO: Fetch services from API
+  const [services] = useState([]);
 
   return (
     <div className="search-container">
@@ -35,7 +25,7 @@ const ManageServicesContent = () => {
             </tr>
           </thead>
           <tbody>
-            {services.map((service) => (
+            {services.length > 0 ? services.map((service) => (
               <tr key={service.id} style={{ borderBottom: '1px solid rgba(255, 255, 255, 0.05)' }}>
                 <td style={{ padding: '20px', fontWeight: '600' }}>{service.name}</td>
                 <td style={{ padding: '20px' }}>{service.category}</td>
@@ -54,17 +44,15 @@ const ManageServicesContent = () => {
                 </td>
                 <td style={{ padding: '20px', display: 'flex', gap: '8px' }}>
                   <button className="btn" style={{ padding: '6px 12px', fontSize: '0.8rem', background: 'rgba(255, 255, 255, 0.05)' }}>Preview</button>
-                  {service.status === 'pending' ? (
-                    <>
-                      <button className="btn btn-primary" style={{ padding: '6px 12px', fontSize: '0.8rem' }} onClick={() => updateStatus(service.id, 'approved')}>Approve</button>
-                      <button className="btn" style={{ padding: '6px 12px', fontSize: '0.8rem', background: 'rgba(255, 0, 0, 0.1)', color: 'var(--error)' }} onClick={() => updateStatus(service.id, 'rejected')}>Reject</button>
-                    </>
-                  ) : (
-                    <button className="btn" style={{ padding: '6px 12px', fontSize: '0.8rem', background: 'rgba(255, 255, 255, 0.05)' }} onClick={() => updateStatus(service.id, 'pending')}>Reset to Pending</button>
-                  )}
+                  <button className="btn btn-primary" style={{ padding: '6px 12px', fontSize: '0.8rem' }}>Approve</button>
+                  <button className="btn" style={{ padding: '6px 12px', fontSize: '0.8rem', background: 'rgba(255, 0, 0, 0.1)', color: 'var(--error)' }}>Reject</button>
                 </td>
               </tr>
-            ))}
+            )) : (
+              <tr>
+                <td colSpan="5" style={{ padding: '40px', textAlign: 'center', color: 'var(--text-dim)' }}>No services to moderate.</td>
+              </tr>
+            )}
           </tbody>
         </table>
       </div>

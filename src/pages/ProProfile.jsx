@@ -1,19 +1,18 @@
-import React, { useState } from 'react';
+import { useState } from 'react';
 import { useAuth } from '../context/AuthContext';
 import Layout from '../components/Layout';
-import { mockStorage } from '../services/mockStorage';
 import '../styles/Profile.css';
 
 const ProProfileContent = () => {
   const { user } = useAuth();
   const [profile, setProfile] = useState({
-    name: user?.name || 'Sarah Miller',
+    name: user?.name || '',
     photo: 'https://images.unsplash.com/photo-1494790108377-be9c29b29330?ixlib=rb-1.2.1&auto=format&fit=crop&w=500&q=60',
-    skills: 'Cleaning, Home Organization',
-    experience: '3 Years',
-    pricing: '$25/hr',
-    location: 'New York, NY',
-    bio: 'Professional cleaner and organization expert with over 3 years of experience in residential and commercial spaces.'
+    skills: '',
+    experience: '',
+    pricing: '',
+    location: '',
+    bio: ''
   });
 
   const handleChange = (e) => {
@@ -22,10 +21,9 @@ const ProProfileContent = () => {
 
   const handleUpdate = (e) => {
     e.preventDefault();
-    mockStorage.updateItem('users', user.id, { ...profile });
+    // TODO: Replace with real API call
     alert('Professional profile updated successfully!');
   };
-
 
   return (
     <div className="profile-page-container">

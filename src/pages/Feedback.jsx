@@ -1,7 +1,6 @@
-import React, { useState } from 'react';
+import { useState } from 'react';
 import Layout from '../components/Layout';
 import '../styles/Services.css';
-import { mockStorage } from '../services/mockStorage';
 import { useAuth } from '../context/AuthContext';
 
 const FeedbackContent = () => {
@@ -12,16 +11,9 @@ const FeedbackContent = () => {
 
   const handleSubmit = (e) => {
     e.preventDefault();
-    mockStorage.addItem('feedback', { 
-      userId: user?.id, 
-      userName: user?.name, 
-      rating, 
-      comment, 
-      date: new Date().toISOString() 
-    });
+    // TODO: Replace with real API call
     setSubmitted(true);
   };
-
 
   return (
     <div className="search-container">

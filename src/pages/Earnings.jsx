@@ -1,23 +1,13 @@
-import React, { useState, useEffect } from 'react';
+import { useState } from 'react';
 import Layout from '../components/Layout';
 import '../styles/Services.css';
-import { mockStorage } from '../services/mockStorage';
 import { useAuth } from '../context/AuthContext';
 
 const EarningsContent = () => {
   const { user } = useAuth();
-  const [payouts, setPayouts] = useState([]);
-  const [totalBalance, setTotalBalance] = useState(0);
-
-  useEffect(() => {
-    const allEarnings = mockStorage.getAll('earnings').filter(e => e.proId === user?.id);
-    const bookings = mockStorage.getAll('bookings').filter(b => b.professional === user?.name && b.status === 'completed');
-    
-    const calculatedBalance = bookings.reduce((acc, curr) => acc + parseFloat(curr.price.replace('$', '')), 0) + 1420;
-    setTotalBalance(calculatedBalance);
-    setPayouts(allEarnings);
-  }, [user]);
-
+  // TODO: Fetch earnings from API
+  const [payouts] = useState([]);
+  const [totalBalance] = useState(0);
 
   return (
     <div className="search-container">
@@ -33,7 +23,7 @@ const EarningsContent = () => {
         </div>
         <div className="glass" style={{ padding: '30px', borderRadius: '24px', borderBottom: '4px solid var(--primary)' }}>
           <h3 style={{ fontSize: '0.9rem', color: 'var(--text-dim)' }}>Pending Withdrawal</h3>
-          <div style={{ fontSize: '2.5rem', fontWeight: '800', marginTop: '10px' }}>$320.00</div>
+          <div style={{ fontSize: '2.5rem', fontWeight: '800', marginTop: '10px' }}>$0.00</div>
         </div>
       </div>
 
@@ -49,7 +39,7 @@ const EarningsContent = () => {
             </tr>
           </thead>
           <tbody>
-            {payouts.map((pay) => (
+            {payouts.length > 0 ? payouts.map((pay) => (
               <tr key={pay.id} style={{ borderBottom: '1px solid rgba(255, 255, 255, 0.05)' }}>
                 <td style={{ padding: '20px', fontWeight: '700', color: 'var(--primary)' }}>{pay.id}</td>
                 <td style={{ padding: '20px' }}>{pay.date}</td>
@@ -68,7 +58,11 @@ const EarningsContent = () => {
                   </span>
                 </td>
               </tr>
-            ))}
+            )) : (
+              <tr>
+                <td colSpan="5" style={{ padding: '40px', textAlign: 'center', color: 'var(--text-dim)' }}>No payout history yet.</td>
+              </tr>
+            )}
           </tbody>
         </table>
       </div>
