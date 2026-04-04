@@ -1,13 +1,28 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import Layout from '../components/Layout';
 import '../styles/Services.css';
 import { useAuth } from '../context/AuthContext';
+import { proAPI } from '../services/api';
 
 const EarningsContent = () => {
   const { user } = useAuth();
-  // TODO: Fetch earnings from API
-  const [payouts] = useState([]);
-  const [totalBalance] = useState(0);
+  const [payouts, setPayouts] = useState([]);
+  const [totalBalance, setTotalBalance] = useState(0);
+
+  useEffect(() => {
+    const fetchEarnings = async () => {
+      try {
+        // proAPI.getEarnings() might return a number or an object depending on backend
+        const data = await proAPI.getEarnings();
+        if (data !== null && data !== undefined) {
+           setTotalBalance(Number(data) || 0);
+        }
+      } catch (err) {
+        console.error('Failed to fetch earnings:', err);
+      }
+    };
+    fetchEarnings();
+  }, []);
 
   return (
     <div className="search-container">

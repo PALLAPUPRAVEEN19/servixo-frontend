@@ -1,12 +1,37 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import Layout from '../components/Layout';
 import '../styles/Services.css';
 import { useAuth } from '../context/AuthContext';
+import { proAPI } from '../services/api';
 
 const ProBookingsContent = () => {
-  // TODO: Fetch bookings from API
-  const [requests] = useState([]);
   const { user } = useAuth();
+  const [requests, setRequests] = useState([]);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    const fetchBookings = async () => {
+      if (!user?.id) return;
+      try {
+        const data = await proAPI.getBookings(user.id);
+        setRequests(data || []);
+      } catch (err) {
+        console.error('Failed to fetch bookings:', err);
+      } finally {
+        setLoading(false);
+      }
+    };
+    fetchBookings();
+  }, [user]);
+
+  const handleStatusUpdate = async (bookingId, newStatus) => {
+    try {
+      // Typically there would be a bookingAPI.updateStatus, we update local state for the prototype
+      setRequests(requests.map(r => r.id === bookingId ? { ...r, status: newStatus } : r));
+    } catch (err) {
+      console.error('Failed to update status:', err);
+    }
+  };
 
   return (
     <div className="search-container">
@@ -45,8 +70,8 @@ const ProBookingsContent = () => {
                   </span>
                 </td>
                 <td style={{ padding: '20px', display: 'flex', gap: '8px' }}>
-                  <button className="btn btn-primary" style={{ padding: '6px 12px', fontSize: '0.8rem' }}>Accept</button>
-                  <button className="btn" style={{ padding: '6px 12px', fontSize: '0.8rem', background: 'rgba(255, 0, 0, 0.1)', color: 'var(--error)' }}>Reject</button>
+                  <button className="btn btn-primary" style={{ padding: '6px 12px', fontSize: '0.8rem' }} onClick={() => handleStatusUpdate(request.id, 'approved')}>Accept</button>
+                  <button className="btn" style={{ padding: '6px 12px', fontSize: '0.8rem', background: 'rgba(255, 0, 0, 0.1)', color: 'var(--error)' }} onClick={() => handleStatusUpdate(request.id, 'rejected')}>Reject</button>
                 </td>
               </tr>
             )) : (

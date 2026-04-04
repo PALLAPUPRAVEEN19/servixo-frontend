@@ -1,5 +1,7 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
+import axios from 'axios';
+import { serviceAPI } from '../services/api';
 import Layout from '../components/Layout';
 
 const categories = ['All', 'Plumbing', 'Cleaning', 'Electrician', 'Painting', 'Outdoor', 'Education', 'Logistics'];
@@ -9,14 +11,37 @@ const ServiceSearchContent = () => {
   const location = useLocation();
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedCategory, setSelectedCategory] = useState(location.state?.category || 'All');
-  // TODO: Fetch services from API
-  const [services] = useState([]);
+  const [services, setServices] = useState([]);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    const fetchServices = async () => {
+      setLoading(true);
+      try {
+        const endpoint = searchTerm.trim() 
+          ? `/api/services/search?keyword=${encodeURIComponent(searchTerm)}`
+          : '/api/services';
+        const response = await axios.get(endpoint);
+        setServices(response.data || []);
+      } catch (err) {
+        console.error('Failed to fetch services:', err);
+      } finally {
+        setLoading(false);
+      }
+    };
+    
+    // Add simple debounce for searching
+    const timerId = setTimeout(() => {
+      fetchServices();
+    }, 300);
+
+    return () => clearTimeout(timerId);
+  }, [searchTerm]);
 
   const filteredServices = services.filter(service => {
-    const matchesSearch = service.name.toLowerCase().includes(searchTerm.toLowerCase()) || 
-                         service.category.toLowerCase().includes(searchTerm.toLowerCase());
-    const matchesCategory = selectedCategory === 'All' || service.category === selectedCategory;
-    return matchesSearch && matchesCategory;
+    const cat = service.category || '';
+    const matchesCategory = selectedCategory === 'All' || cat === selectedCategory;
+    return matchesCategory;
   });
 
   const handleHire = (service) => {
@@ -48,32 +73,36 @@ const ServiceSearchContent = () => {
         </div>
       </div>
 
-      <div className="professionals-grid">
-        {filteredServices.map(service => (
-          <div key={service.id} className="pro-card glass">
-            <div className="pro-info">
-              <div className="pro-name">{service.name}</div>
-              <div className="pro-skills">
-                <span className="skill-tag">{service.category}</span>
+      {loading ? (
+        <div style={{ textAlign: 'center', padding: '60px', color: 'var(--text-dim)' }}>Loading services...</div>
+      ) : (
+        <div className="professionals-grid">
+          {filteredServices.map(service => (
+            <div key={service.id} className="pro-card glass">
+              <div className="pro-info">
+                <div className="pro-name">{service.title || service.name}</div>
+                <div className="pro-skills">
+                  <span className="skill-tag">{service.category || 'General'}</span>
+                </div>
+                <div style={{ marginTop: '10px', fontSize: '0.9rem', color: 'var(--text-dim)' }}>
+                  {service.description}
+                </div>
               </div>
-              <div style={{ marginTop: '10px', fontSize: '0.9rem', color: 'var(--text-dim)' }}>
-                Provider: <strong>{service.proName}</strong>
+              <div className="pro-meta">
+                <span>Verified 🛡️</span>
+                <span style={{ color: 'var(--success)' }}>{service.status}</span>
               </div>
+              <div className="pro-price">₹{service.price}</div>
+              <button className="btn btn-primary hire-btn" onClick={() => handleHire(service)}>Hire Now</button>
             </div>
-            <div className="pro-meta">
-              <span>Verified 🛡️</span>
-              <span style={{ color: 'var(--success)' }}>Active</span>
+          ))}
+          {filteredServices.length === 0 && (
+            <div style={{ color: 'var(--text-dim)', textAlign: 'center', width: '100%', gridColumn: '1 / -1', padding: '40px' }}>
+              No services found matching your search.
             </div>
-            <div className="pro-price">{service.price}</div>
-            <button className="btn btn-primary hire-btn" onClick={() => handleHire(service)}>Hire Now</button>
-          </div>
-        ))}
-        {filteredServices.length === 0 && (
-          <div style={{ color: 'var(--text-dim)', textAlign: 'center', width: '100%', gridColumn: '1 / -1', padding: '40px' }}>
-            No services found matching your search.
-          </div>
-        )}
-      </div>
+          )}
+        </div>
+      )}
     </div>
   );
 };

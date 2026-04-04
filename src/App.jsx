@@ -67,8 +67,8 @@ function App() {
       </Route>
 
       {/* Professional Routes */}
-      <Route element={<RoleBasedRoute allowedRoles={['professional']} />}>
-        <Route path="/pro-dashboard" element={<ProDashboard />} />
+      <Route element={<RoleBasedRoute allowedRoles={['professional', 'PROFESSIONAL']} />}>
+        <Route path="/professional-dashboard" element={<ProDashboard />} />
         <Route path="/pro-profile" element={<ProProfile />} />
         <Route path="/pro-services" element={<ProServices />} />
         <Route path="/pro-bookings" element={<ProBookings />} />

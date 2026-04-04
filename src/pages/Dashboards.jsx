@@ -1,4 +1,5 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
+import axios from 'axios';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import Layout from '../components/Layout';
@@ -96,46 +97,93 @@ export const UserDashboard = () => (
 );
 
 const AdminDashboardContent = () => {
-  const stats = [
-    { title: 'Total Users', value: 0, color: 'var(--primary)' },
-    { title: 'Professionals', value: 0, color: 'var(--accent)' },
-    { title: 'Services List', value: 0, color: 'var(--success)' },
-    { title: 'Total Bookings', value: 0, color: 'var(--primary-glow)' },
-    { title: 'Total Revenue', value: '$0', color: '#00FA9A' }
-  ];
+  const [stats, setStats] = useState({ users: 0, professionals: 0 });
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    const token = localStorage.getItem('token') || '';
+    
+    axios.get("/api/admin/stats", {
+      headers: {
+        Authorization: `Bearer ${token}`
+      }
+    })
+    .then(res => {
+      setStats(res.data);
+      setLoading(false);
+    })
+    .catch(err => {
+      console.error(err);
+      setLoading(false);
+    });
+  }, []);
+
+  if (loading) {
+    return (
+      <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', height: '60vh' }}>
+        <div style={{ 
+          width: '50px', height: '50px', 
+          border: '4px solid rgba(255,255,255,0.1)', 
+          borderTop: '4px solid var(--primary)', 
+          borderRadius: '50%', 
+          animation: 'spin 1s linear infinite' 
+        }}></div>
+        <style>{`
+          @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+          }
+        `}</style>
+      </div>
+    );
+  }
 
   return (
     <div>
       <h2 style={{ marginBottom: '30px' }}>Admin Overview</h2>
-      <div className="stats-grid">
-        {stats.map((stat, index) => (
-          <div 
-            key={index} 
-            className="stat-card glass" 
-            style={{ borderBottom: `4px solid ${stat.color}` }}
-          >
-            <h3>{stat.title}</h3>
-            <div className="value">{stat.value}</div>
+      
+      {/* We use a specialized responsive grid just for these two heavy cards */}
+      <div style={{ 
+        display: 'grid', 
+        gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))', 
+        gap: '30px', 
+        marginBottom: '40px' 
+      }}>
+        
+        {/* Card 1: Total Users */}
+        <div className="stat-card glass" style={{ 
+          borderBottom: '4px solid var(--primary)', 
+          padding: '40px 30px',
+          display: 'flex',
+          alignItems: 'center',
+          gap: '20px'
+        }}>
+          <div style={{ fontSize: '3rem' }}>👥</div>
+          <div>
+            <h3 style={{ fontSize: '1.2rem', color: 'var(--text-dim)', marginBottom: '5px' }}>Total Users</h3>
+            <div className="value" style={{ fontSize: '3.5rem', fontWeight: '800', lineHeight: '1' }}>
+              {stats.users}
+            </div>
           </div>
-        ))}
-      </div>
+        </div>
 
-      <div style={{ display: 'grid', gridTemplateColumns: '1.5fr 1fr', gap: '30px' }}>
-        <div className="glass" style={{ padding: '30px', borderRadius: '24px' }}>
-          <h3>Recent Registrations</h3>
-          <div style={{ marginTop: '20px', textAlign: 'center', padding: '20px', color: 'var(--text-dim)' }}>
-            No recent registrations.
+        {/* Card 2: Total Professionals */}
+        <div className="stat-card glass" style={{ 
+          borderBottom: '4px solid var(--accent)', 
+          padding: '40px 30px',
+          display: 'flex',
+          alignItems: 'center',
+          gap: '20px'
+        }}>
+          <div style={{ fontSize: '3rem' }}>💼</div>
+          <div>
+            <h3 style={{ fontSize: '1.2rem', color: 'var(--text-dim)', marginBottom: '5px' }}>Total Professionals</h3>
+            <div className="value" style={{ fontSize: '3.5rem', fontWeight: '800', lineHeight: '1' }}>
+              {stats.professionals}
+            </div>
           </div>
         </div>
 
-        <div className="glass" style={{ padding: '30px', borderRadius: '24px' }}>
-          <h3>Revenue Stats</h3>
-          <div className="chart-container" style={{ marginTop: '20px' }}>
-             {[50, 70, 40, 90, 60].map((h, i) => (
-               <div key={i} className="chart-bar" style={{ height: `${h}%` }}></div>
-             ))}
-          </div>
-        </div>
       </div>
     </div>
   );

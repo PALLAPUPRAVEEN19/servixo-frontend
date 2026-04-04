@@ -1,4 +1,5 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
+import axios from 'axios';
 import { useAuth } from '../context/AuthContext';
 import Layout from '../components/Layout';
 import '../styles/Services.css';
@@ -6,45 +7,79 @@ import '../styles/Profile.css';
 
 const ProServicesContent = () => {
   const { user } = useAuth();
-  // TODO: Fetch services from API
   const [services, setServices] = useState([]);
+  const [loading, setLoading] = useState(true);
+
+  const [error, setError] = useState(null);
+
+  useEffect(() => {
+    const fetchServices = async () => {
+      try {
+        setLoading(true);
+        setError(null);
+        const response = await axios.get('/api/services');
+        setServices(response.data || []);
+      } catch (err) {
+        console.error('Failed to fetch services:', err);
+        setError('Failed to load services. Please try again later.');
+      } finally {
+        setLoading(false);
+      }
+    };
+    fetchServices();
+  }, []);
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [editingService, setEditingService] = useState(null);
-  const [formData, setFormData] = useState({ name: '', category: '', price: '' });
+  const [formData, setFormData] = useState({ title: '', description: '', category: '', price: '' });
 
   const handleOpenModal = (service = null) => {
     if (service) {
       setEditingService(service);
-      setFormData({ name: service.name, category: service.category, price: service.price.replace('$', '') });
+      setFormData({ 
+        title: service.title, 
+        description: service.description,
+        category: service.category, 
+        price: service.price.toString().replace('$', '') 
+      });
     } else {
       setEditingService(null);
-      setFormData({ name: '', category: '', price: '' });
+      setFormData({ title: '', description: '', category: '', price: '' });
     }
     setIsModalOpen(true);
   };
 
-  const handleSave = (e) => {
+  const handleSave = async (e) => {
     e.preventDefault();
-    // TODO: Replace with real API call
-    if (editingService) {
-      setServices(services.map(s => s.id === editingService.id ? { ...s, ...formData, price: `$${formData.price}` } : s));
-    } else {
-      const newService = {
-        ...formData,
-        id: `SVC-${Date.now()}`,
-        price: `$${formData.price}`,
-        proId: user?.id,
-        proName: user?.name,
-        status: 'pending'
-      };
-      setServices([...services, newService]);
+    try {
+      setError(null);
+      if (editingService) {
+        const response = await axios.put(`/api/services/${editingService.id}`, formData);
+        setServices(services.map(s => s.id === editingService.id ? response.data : s));
+      } else {
+        const payload = {
+          ...formData,
+          professional: { id: user?.id }
+        };
+        const response = await axios.post('/api/services', payload);
+        setServices([...services, response.data]);
+      }
+    } catch (err) {
+      console.error('Failed to save service:', err);
+    } finally {
+      setIsModalOpen(false);
     }
-    setIsModalOpen(false);
   };
 
-  const deleteService = (id) => {
-    // TODO: Replace with real API call
-    setServices(services.filter(s => s.id !== id));
+  const deleteService = async (id) => {
+    if (!window.confirm("Are you sure you want to delete this service?")) return;
+    try {
+      setError(null);
+      await axios.delete(`/api/services/${id}`);
+      setServices(services.filter(s => s.id !== id));
+    } catch (err) {
+      console.error('Failed to delete service:', err);
+      setError('Failed to delete service.');
+    }
   };
 
   return (
@@ -57,48 +92,55 @@ const ProServicesContent = () => {
         <button className="btn btn-primary" onClick={() => handleOpenModal()}>+ Add New Service</button>
       </div>
 
-      <div className="profile-card" style={{ padding: '0', overflow: 'hidden' }}>
-        <table style={{ width: '100%', borderCollapse: 'collapse', textAlign: 'left' }}>
-          <thead style={{ background: 'rgba(255, 255, 255, 0.03)', color: 'var(--text-dim)', fontSize: '0.85rem', textTransform: 'uppercase', letterSpacing: '1px' }}>
-            <tr>
-              <th style={{ padding: '20px' }}>Service Name</th>
-              <th style={{ padding: '20px' }}>Category</th>
-              <th style={{ padding: '20px' }}>Price</th>
-              <th style={{ padding: '20px' }}>Status</th>
-              <th style={{ padding: '20px' }}>Actions</th>
-            </tr>
-          </thead>
-          <tbody>
-            {services.length > 0 ? services.map((service) => (
-              <tr key={service.id} style={{ borderBottom: '1px solid rgba(255, 255, 255, 0.05)' }}>
-                <td style={{ padding: '20px', fontWeight: '600', color: 'var(--text-main)' }}>{service.name}</td>
-                <td style={{ padding: '20px', color: 'var(--text-dim)' }}>{service.category}</td>
-                <td style={{ padding: '20px', fontWeight: '800', color: 'var(--primary)' }}>{service.price}</td>
-                <td style={{ padding: '20px' }}>
-                  <span style={{ 
-                    padding: '6px 12px', 
-                    borderRadius: '20px', 
-                    fontSize: '0.7rem', 
-                    fontWeight: '800',
-                    background: service.status === 'approved' ? 'var(--success)' : 'rgba(255, 255, 255, 0.1)',
-                    color: 'white'
-                  }}>
-                    {service.status.toUpperCase()}
-                  </span>
-                </td>
-                <td style={{ padding: '20px', display: 'flex', gap: '8px' }}>
-                  <button className="btn" style={{ padding: '6px 15px', fontSize: '0.8rem', background: 'rgba(255, 255, 255, 0.05)', color: 'var(--text-main)' }} onClick={() => handleOpenModal(service)}>Edit</button>
-                  <button className="btn" style={{ padding: '6px 15px', fontSize: '0.8rem', background: 'rgba(255, 71, 87, 0.1)', color: 'var(--error)' }} onClick={() => deleteService(service.id)}>Delete</button>
-                </td>
-              </tr>
-            )) : (
-              <tr>
-                <td colSpan="5" style={{ padding: '40px', textAlign: 'center', color: 'var(--text-dim)' }}>No services listed yet. Click "+ Add New Service" to get started.</td>
-              </tr>
-            )}
-          </tbody>
-        </table>
-      </div>
+      {error && <div style={{ color: 'var(--error)', background: 'rgba(255, 71, 87, 0.1)', padding: '15px', borderRadius: '12px', marginBottom: '20px' }}>{error}</div>}
+
+      {loading ? (
+        <div style={{ textAlign: 'center', padding: '40px', color: 'var(--text-dim)' }}>Loading services...</div>
+      ) : (
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(300px, 1fr))', gap: '20px' }}>
+          {services.length > 0 ? services.map((service) => (
+            <div key={service.id} className="profile-card glass" style={{ display: 'flex', flexDirection: 'column', padding: '20px', borderRadius: '16px' }}>
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '15px' }}>
+                <h3 style={{ margin: 0, fontSize: '1.2rem', color: 'var(--text-main)' }}>{service.title || service.name}</h3>
+                <span style={{ 
+                  padding: '4px 10px', 
+                  borderRadius: '20px', 
+                  fontSize: '0.7rem', 
+                  fontWeight: '800',
+                  background: service.status === 'approved' ? 'var(--success)' : 'rgba(255, 255, 255, 0.1)',
+                  color: 'white'
+                }}>
+                  {(service.status || 'pending').toUpperCase()}
+                </span>
+              </div>
+              
+              <div style={{ color: 'var(--text-dim)', fontSize: '0.9rem', marginBottom: '20px', flexGrow: 1 }}>
+                {service.description || 'No description listed'}
+              </div>
+              
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '20px', paddingBottom: '15px', borderBottom: '1px solid rgba(255,255,255,0.05)' }}>
+                <div style={{ color: 'var(--text-dim)', fontSize: '0.85rem' }}>
+                  <span style={{ display: 'block', marginBottom: '4px' }}>Category</span>
+                  <span style={{ color: 'var(--text-main)', fontWeight: '500' }}>{service.category}</span>
+                </div>
+                <div style={{ textAlign: 'right' }}>
+                  <span style={{ display: 'block', color: 'var(--text-dim)', fontSize: '0.85rem', marginBottom: '4px' }}>Price</span>
+                  <span style={{ color: 'var(--primary)', fontWeight: '800', fontSize: '1.1rem' }}>${service.price}</span>
+                </div>
+              </div>
+
+              <div style={{ display: 'flex', gap: '10px' }}>
+                <button className="btn" style={{ flex: 1, padding: '8px 0', fontSize: '0.9rem', background: 'rgba(255, 255, 255, 0.05)', color: 'var(--text-main)' }} onClick={() => handleOpenModal(service)}>Edit</button>
+                <button className="btn" style={{ flex: 1, padding: '8px 0', fontSize: '0.9rem', background: 'rgba(255, 71, 87, 0.1)', color: 'var(--error)' }} onClick={() => deleteService(service.id)}>Delete</button>
+              </div>
+            </div>
+          )) : (
+            <div style={{ gridColumn: '1 / -1', padding: '40px', textAlign: 'center', color: 'var(--text-dim)', background: 'rgba(255,255,255,0.02)', borderRadius: '16px' }}>
+              No services listed yet. Click "+ Add New Service" to get started.
+            </div>
+          )}
+        </div>
+      )}
 
       {isModalOpen && (
         <div style={{ position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, background: 'rgba(0,0,0,0.8)', display: 'flex', justifyContent: 'center', alignItems: 'center', zIndex: 1000 }}>
@@ -106,13 +148,23 @@ const ProServicesContent = () => {
             <h3 style={{ marginBottom: '25px' }}>{editingService ? 'Edit Service' : 'Add New Service'}</h3>
             <form className="profile-form" onSubmit={handleSave}>
               <div className="form-group">
-                <label>Service Name</label>
+                <label>Service Title</label>
                 <input 
                   type="text" 
-                  value={formData.name} 
-                  onChange={(e) => setFormData({...formData, name: e.target.value})} 
+                  value={formData.title} 
+                  onChange={(e) => setFormData({...formData, title: e.target.value})} 
                   placeholder="e.g. Standard House Cleaning"
                   required 
+                />
+              </div>
+              <div className="form-group">
+                <label>Description</label>
+                <textarea 
+                  value={formData.description} 
+                  onChange={(e) => setFormData({...formData, description: e.target.value})} 
+                  placeholder="Describe what is included in this service"
+                  required 
+                  style={{ width: '100%', padding: '12px', borderRadius: '12px', background: 'rgba(255, 255, 255, 0.05)', border: '1px solid rgba(255, 255, 255, 0.1)', color: 'white', minHeight: '80px' }}
                 />
               </div>
               <div className="form-group">

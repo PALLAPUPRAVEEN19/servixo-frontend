@@ -1,52 +1,80 @@
-import { createContext, useState, useContext, useEffect } from 'react';
+import { createContext, useState, useContext, useCallback } from 'react';
+import { ticketAPI, supportAPI, adminAPI } from '../services/api';
 
 const TicketContext = createContext();
 
 export const TicketProvider = ({ children }) => {
-  const [tickets, setTickets] = useState(() => {
-    const stored = localStorage.getItem('servixo_tickets');
-    return stored ? JSON.parse(stored) : [];
-  });
+  const [tickets, setTickets] = useState([]);
+  const [loading, setLoading] = useState(false);
 
-  useEffect(() => {
-    localStorage.setItem('servixo_tickets', JSON.stringify(tickets));
-  }, [tickets]);
+  // Fetch tickets for a specific user
+  const fetchUserTickets = useCallback(async (userId) => {
+    setLoading(true);
+    try {
+      const data = await ticketAPI.getByUser(userId);
+      setTickets(data || []);
+    } catch (err) {
+      console.error('Failed to fetch user tickets:', err);
+      setTickets([]);
+    } finally {
+      setLoading(false);
+    }
+  }, []);
 
-  const createTicket = (ticketData) => {
-    const newTicket = {
-      ...ticketData,
-      id: `TIC-${Date.now()}`,
-      status: 'open',
-      priority: 'medium',
-      createdAt: new Date().toISOString(),
-      messages: [
-        {
-          sender: ticketData.userName,
-          role: 'user',
-          text: ticketData.description,
-          time: new Date().toISOString()
-        }
-      ]
-    };
-    setTickets(prev => [newTicket, ...prev]);
-    return newTicket;
+  // Fetch all tickets (for support/admin)
+  const fetchAllTickets = useCallback(async (role = 'support') => {
+    setLoading(true);
+    try {
+      const data = role === 'admin'
+        ? await adminAPI.getTickets()
+        : await supportAPI.getTickets();
+      setTickets(data || []);
+    } catch (err) {
+      console.error('Failed to fetch all tickets:', err);
+      setTickets([]);
+    } finally {
+      setLoading(false);
+    }
+  }, []);
+
+  // Create a new ticket
+  const createTicket = async (ticketData) => {
+    try {
+      const newTicket = await ticketAPI.create(ticketData);
+      setTickets(prev => [newTicket, ...prev]);
+      return newTicket;
+    } catch (err) {
+      console.error('Failed to create ticket:', err);
+      throw err;
+    }
   };
 
-  const updateTicket = (id, updates) => {
-    setTickets(prev => prev.map(t => t.id === id ? { ...t, ...updates } : t));
-  };
-
-  const addMessage = (ticketId, message) => {
-    setTickets(prev => prev.map(t => {
-      if (t.id === ticketId) {
-        return { ...t, messages: [...(t.messages || []), { ...message, time: new Date().toISOString() }] };
+  // Update ticket status
+  const updateTicket = async (id, status, role = 'support') => {
+    try {
+      let updated;
+      if (role === 'admin') {
+        updated = await adminAPI.updateTicket(id, status);
+      } else {
+        updated = await supportAPI.updateTicket(id, status);
       }
-      return t;
-    }));
+      setTickets(prev => prev.map(t => t.id === id ? updated : t));
+      return updated;
+    } catch (err) {
+      console.error('Failed to update ticket:', err);
+      throw err;
+    }
   };
 
   return (
-    <TicketContext.Provider value={{ tickets, createTicket, updateTicket, addMessage }}>
+    <TicketContext.Provider value={{
+      tickets,
+      loading,
+      createTicket,
+      updateTicket,
+      fetchUserTickets,
+      fetchAllTickets,
+    }}>
       {children}
     </TicketContext.Provider>
   );

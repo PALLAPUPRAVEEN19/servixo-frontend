@@ -17,7 +17,13 @@ const RoleBasedRoute = ({ allowedRoles }) => {
     return <Navigate to="/login" replace />;
   }
 
-  if (allowedRoles && !allowedRoles.includes(user.role)) {
+  const userRole = typeof user.role === 'string' 
+    ? user.role.toLowerCase() 
+    : user.role?.name?.toLowerCase();
+
+  const normalizedAllowedRoles = allowedRoles?.map(r => r.toLowerCase());
+
+  if (allowedRoles && !normalizedAllowedRoles.includes(userRole)) {
     return <Navigate to="/unauthorized" replace />;
   }
 

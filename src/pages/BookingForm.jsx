@@ -1,6 +1,8 @@
 import { useState } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
+import axios from 'axios';
 import Layout from '../components/Layout';
+import Toast from '../components/Toast';
 import '../styles/Services.css';
 import '../styles/Profile.css';
 import { useAuth } from '../context/AuthContext';
@@ -9,7 +11,12 @@ const BookingFormContent = () => {
   const location = useLocation();
   const navigate = useNavigate();
   const { user } = useAuth();
+  
   const [step, setStep] = useState(1);
+  const [toast, setToast] = useState(null);
+  const [isProcessing, setIsProcessing] = useState(false);
+  const [errors, setErrors] = useState({});
+  
   const [bookingData, setBookingData] = useState({
     date: '',
     time: '',
@@ -31,61 +38,195 @@ const BookingFormContent = () => {
 
   const handleChange = (e) => {
     setBookingData({ ...bookingData, [e.target.name]: e.target.value });
+    // Clear specific error as user types
+    if (errors[e.target.name]) {
+      setErrors({ ...errors, [e.target.name]: null });
+    }
   };
 
   const nextStep = () => setStep(step + 1);
   const prevStep = () => setStep(step - 1);
 
-  const handleSubmit = (e) => {
-    e.preventDefault();
-    if (!bookingData.date || !bookingData.time || !bookingData.address) {
-      alert('Please fill in all required fields.');
+  // Check if form is filled out minimally to enable the button
+  const isFormFilled = bookingData.date.trim() && bookingData.time.trim() && bookingData.address.trim();
+
+  const handleContinueToPayment = async () => {
+    const newErrors = {};
+    const today = new Date().toISOString().split('T')[0];
+
+    // Format Date: Ensure yyyy-mm-dd
+    let formattedDate = bookingData.date;
+    if (formattedDate && formattedDate.includes('-')) {
+      const parts = formattedDate.split('-');
+      if (parts[2] && parts[2].length === 4) {
+        formattedDate = `${parts[2]}-${parts[1]}-${parts[0]}`;
+      }
+    }
+
+    // Format Time: Ensure HH:mm:ss
+    let formattedTime = bookingData.time;
+    if (formattedTime) {
+      const timeParts = formattedTime.split(':');
+      if (timeParts.length === 2) {
+        formattedTime = `${timeParts[0].padStart(2, '0')}:${timeParts[1].padStart(2, '0')}:00`;
+      }
+    }
+
+    // 1. Validation Logic
+    if (!formattedDate || formattedDate < today) {
+      newErrors.date = "Service Date is required and must be a future date.";
+    }
+    if (!formattedTime) {
+      newErrors.time = "Arrival Time is required.";
+    }
+    if (!bookingData.address || bookingData.address.trim().length < 10) {
+      newErrors.address = "Service Address is required and must be at least 10 characters.";
+    }
+    if (!user?.id || !service?.id) {
+      setToast({ message: "System Error: Missing user or service details.", type: "error" });
       return;
     }
-    // TODO: Replace with real API call to create booking
-    setStep(4);
+
+    if (Object.keys(newErrors).length > 0) {
+      setErrors(newErrors);
+      return;
+    }
+
+    // 2. Clear old errors & set processing
+    setErrors({});
+    setIsProcessing(true);
+
+    try {
+      const payload = {
+        serviceDate: formattedDate,
+        arrivalTime: formattedTime,
+        address: bookingData.address,
+        instructions: bookingData.description || ""
+      };
+      
+      const token = localStorage.getItem('token') || '';
+      
+      // 3. Call backend API with query parameters dynamically
+      await axios.post(`/api/bookings?userId=${user.id}&serviceId=${service.id}`, payload, {
+        headers: { Authorization: `Bearer ${token}` }
+      });
+      
+      // 4. Handle Success
+      setToast({ message: "Booking successful", type: "success" });
+      setStep(2); // Proceed to Payment step
+      
+    } catch (err) {
+      console.error('Failed to create booking:', err);
+      // 5. Handle Failure
+      setToast({ message: "Booking failed. Please try again.", type: "error" });
+    } finally {
+      setIsProcessing(false);
+    }
+  };
+
+  const handlePaymentSubmit = () => {
+    // Booking is already created on backend during step 1.
+    // So this step simulates completing the payment and finishing up.
+    setIsProcessing(true);
+    setTimeout(() => {
+      setIsProcessing(false);
+      setStep(4);
+    }, 1500); 
   };
 
   return (
-    <div className="profile-page-container">
+    <div className="profile-page-container pt-8 md:pt-16 pb-16">
       <div className="profile-section-header" style={{ textAlign: 'center', maxWidth: '600px', margin: '0 auto 40px' }}>
-        <div style={{ fontSize: '0.9rem', color: 'var(--primary)', fontWeight: '800', textTransform: 'uppercase', marginBottom: '10px' }}>
+        <div style={{ fontSize: '0.9rem', color: 'var(--primary)', fontWeight: '800', textTransform: 'uppercase', marginBottom: '10px', letterSpacing: '1px' }}>
           Step {step} of 3
         </div>
-        <h2>{step === 1 ? 'Booking Details' : step === 2 ? 'Secure Payment' : step === 3 ? 'Review & Confirm' : 'Confirmed!'}</h2>
-        <p style={{ color: 'var(--text-main)', fontSize: '1.2rem', fontWeight: '700', marginTop: '10px' }}>
-          {service.name} <span style={{ color: 'var(--text-dim)', fontWeight: '400' }}>• Provided by {service.proName}</span>
+        <h2 style={{ fontSize: '2.2rem' }}>{step === 1 ? 'Booking Details' : step === 2 ? 'Secure Payment' : step === 3 ? 'Review & Confirm' : 'Confirmed!'}</h2>
+        <p style={{ color: 'var(--text-main)', fontSize: '1.1rem', fontWeight: '600', marginTop: '10px' }}>
+          {service.name} <span style={{ color: 'var(--text-dim)', fontWeight: '400' }}>• Provided by {service.proName || 'Professional'}</span>
         </p>
       </div>
 
-      <div className="profile-card" style={{ maxWidth: '600px', margin: '0 auto', borderTop: `4px solid var(--primary)` }}>
+      <div className="profile-card glass" style={{ maxWidth: '650px', margin: '0 auto', borderTop: `4px solid var(--primary)`, padding: '40px', borderRadius: '16px' }}>
+        
         {step === 1 && (
-          <form className="profile-form">
+          <form className="profile-form" onSubmit={(e) => e.preventDefault()}>
             <div className="form-row">
-              <div className="form-group">
-                <label>Service Date</label>
-                <input type="date" name="date" required onChange={handleChange} value={bookingData.date} />
+              <div className="form-group" style={{ marginBottom: '20px' }}>
+                <label style={{ color: 'var(--text-dim)', fontWeight: 'bold' }}>Service Date <span style={{color: 'red'}}>*</span></label>
+                <input 
+                  type="date" 
+                  name="date" 
+                  onChange={handleChange} 
+                  value={bookingData.date} 
+                  style={{ 
+                    borderColor: errors.date ? '#ef4444' : 'rgba(255,255,255,0.1)',
+                    background: 'rgba(0,0,0,0.2)'
+                  }} 
+                />
+                {errors.date && <p style={{ color: '#ef4444', fontSize: '0.85rem', marginTop: '6px', fontWeight: '500' }}>{errors.date}</p>}
               </div>
-              <div className="form-group">
-                <label>Arrival Time</label>
-                <input type="time" name="time" required onChange={handleChange} value={bookingData.time} />
+
+              <div className="form-group" style={{ marginBottom: '20px' }}>
+                <label style={{ color: 'var(--text-dim)', fontWeight: 'bold' }}>Arrival Time <span style={{color: 'red'}}>*</span></label>
+                <input 
+                  type="time" 
+                  name="time" 
+                  onChange={handleChange} 
+                  value={bookingData.time} 
+                  style={{ 
+                    borderColor: errors.time ? '#ef4444' : 'rgba(255,255,255,0.1)',
+                    background: 'rgba(0,0,0,0.2)'
+                  }} 
+                />
+                {errors.time && <p style={{ color: '#ef4444', fontSize: '0.85rem', marginTop: '6px', fontWeight: '500' }}>{errors.time}</p>}
               </div>
             </div>
-            <div className="form-group">
-              <label>Service Address</label>
-              <input type="text" name="address" placeholder="e.g. 123 Modern Ave, Suite 400" required onChange={handleChange} value={bookingData.address} />
+
+            <div className="form-group" style={{ marginBottom: '20px' }}>
+              <label style={{ color: 'var(--text-dim)', fontWeight: 'bold' }}>Service Address <span style={{color: 'red'}}>*</span></label>
+              <input 
+                type="text" 
+                name="address" 
+                placeholder="e.g. 123 Modern Ave, Suite 400" 
+                onChange={handleChange} 
+                value={bookingData.address} 
+                className="w-full"
+                style={{ 
+                  borderColor: errors.address ? '#ef4444' : 'rgba(255,255,255,0.1)',
+                  background: 'rgba(0,0,0,0.2)'
+                }} 
+              />
+              {errors.address && <p style={{ color: '#ef4444', fontSize: '0.85rem', marginTop: '6px', fontWeight: '500' }}>{errors.address}</p>}
             </div>
-            <div className="form-group">
-              <label>Special Instructions</label>
+
+            <div className="form-group" style={{ marginBottom: '30px' }}>
+              <label style={{ color: 'var(--text-dim)', fontWeight: 'bold' }}>Special Instructions <span style={{fontWeight: 'normal', opacity: 0.6}}>(Optional)</span></label>
               <textarea 
                 name="description" 
-                placeholder="Any specific tools needed or entry instructions?"
+                placeholder="Any specific tools needed, entry instructions, or gate codes?"
                 onChange={handleChange}
                 value={bookingData.description}
-                style={{ minHeight: '120px' }}
+                style={{ minHeight: '120px', background: 'rgba(0,0,0,0.2)', borderColor: 'rgba(255,255,255,0.1)' }}
               />
             </div>
-            <button type="button" className="btn btn-primary" style={{ marginTop: '10px' }} onClick={nextStep}>Continue to Payment</button>
+            
+            <button 
+              type="button" 
+              className="btn btn-primary" 
+              style={{ 
+                marginTop: '10px', 
+                width: '100%', 
+                padding: '16px',
+                fontSize: '1.1rem',
+                opacity: (!isFormFilled || isProcessing) ? 0.6 : 1,
+                cursor: (!isFormFilled || isProcessing) ? 'not-allowed' : 'pointer',
+                transition: 'all 0.3s'
+              }} 
+              onClick={handleContinueToPayment}
+              disabled={!isFormFilled || isProcessing}
+            >
+              {isProcessing ? "Processing..." : "Continue to Payment"}
+            </button>
           </form>
         )}
 
@@ -99,6 +240,7 @@ const BookingFormContent = () => {
                 <option value="netbanking">Net Banking</option>
               </select>
             </div>
+            
             {bookingData.paymentMethod === 'card' && (
               <div style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
                 <div className="form-group">
@@ -121,7 +263,7 @@ const BookingFormContent = () => {
                 </div>
               </div>
             )}
-            <div style={{ display: 'flex', gap: '15px', marginTop: '10px' }}>
+            <div style={{ display: 'flex', gap: '15px', marginTop: '20px' }}>
               <button type="button" className="btn" style={{ background: 'rgba(255,255,255,0.05)', flex: 1 }} onClick={prevStep}>Back</button>
               <button type="button" className="btn btn-primary" style={{ flex: 2 }} onClick={nextStep}>Review Summary</button>
             </div>
@@ -130,41 +272,61 @@ const BookingFormContent = () => {
 
         {step === 3 && (
           <div className="profile-form">
-            <div style={{ background: 'rgba(255,255,255,0.02)', padding: '20px', borderRadius: '16px', border: '1px dashed rgba(255,255,255,0.1)' }}>
+            <div style={{ background: 'rgba(255,255,255,0.02)', padding: '25px', borderRadius: '16px', border: '1px dashed rgba(255,255,255,0.1)' }}>
               <div style={{ display: 'flex', justifyContent: 'space-between', padding: '10px 0', color: 'var(--text-dim)' }}>
-                <span>{service.name}</span>
-                <span style={{ color: 'var(--text-main)', fontWeight: '700' }}>{service.price}</span>
+                <span style={{ fontWeight: '500' }}>{service.name}</span>
+                <span style={{ color: 'var(--text-main)', fontWeight: '700' }}>${typeof service.price === 'number' ? service.price.toFixed(2) : service.price.toString().replace('$','')}</span>
               </div>
               <div style={{ display: 'flex', justifyContent: 'space-between', padding: '10px 0', color: 'var(--text-dim)' }}>
-                <span>Processing & Platform Fee</span>
+                <span style={{ fontWeight: '500' }}>Processing & Platform Fee</span>
                 <span style={{ color: 'var(--text-main)', fontWeight: '700' }}>$5.00</span>
               </div>
-              <div style={{ display: 'flex', justifyContent: 'space-between', padding: '20px 0', borderTop: '1px solid rgba(255,255,255,0.05)', marginTop: '10px' }}>
-                <span style={{ fontSize: '1.1rem', fontWeight: '700' }}>Total Amount</span>
-                <span style={{ fontSize: '1.4rem', fontWeight: '900', color: 'var(--success)' }}>${parseFloat(service.price.replace('$', '')) + 5}.00</span>
+              
+              <div style={{ display: 'flex', justifyContent: 'space-between', padding: '20px 0', borderTop: '1px solid rgba(255,255,255,0.05)', marginTop: '20px' }}>
+                <span style={{ fontSize: '1.2rem', fontWeight: '700', color: 'var(--text-main)' }}>Total Amount</span>
+                <span style={{ fontSize: '1.6rem', fontWeight: '900', color: 'var(--success)' }}>
+                  ${(parseFloat(service.price?.toString().replace('$', '') || 0) + 5).toFixed(2)}
+                </span>
               </div>
             </div>
-            <div style={{ display: 'flex', gap: '15px', marginTop: '10px' }}>
+            
+            <div style={{ display: 'flex', gap: '15px', marginTop: '20px' }}>
               <button type="button" className="btn" style={{ background: 'rgba(255,255,255,0.05)', flex: 1 }} onClick={prevStep}>Edit Details</button>
-              <button type="button" className="btn btn-primary" style={{ flex: 2 }} onClick={handleSubmit}>Pay & Confirm Booking</button>
+              <button 
+                type="button" 
+                className="btn btn-primary" 
+                style={{ flex: 2, opacity: isProcessing ? 0.7 : 1 }} 
+                onClick={handlePaymentSubmit}
+                disabled={isProcessing}
+              >
+                {isProcessing ? "Processing Payment..." : "Pay & Confirm Booking"}
+              </button>
             </div>
           </div>
         )}
 
         {step === 4 && (
-          <div style={{ textAlign: 'center', padding: '30px 10px' }}>
-            <div style={{ fontSize: '5rem', marginBottom: '30px', animation: 'fadeIn 0.5s ease-out' }}>✨</div>
-            <h3 style={{ fontSize: '1.8rem', marginBottom: '15px' }}>Booking Confirmed!</h3>
-            <p style={{ color: 'var(--text-dim)', marginBottom: '30px', lineHeight: '1.6' }}>
-              A notification has been sent to <strong>{service.proName}</strong>. They will arrive on <strong>{bookingData.date}</strong> at <strong>{bookingData.time}</strong>.
+          <div style={{ textAlign: 'center', padding: '40px 20px' }}>
+            <div style={{ fontSize: '6rem', marginBottom: '30px', animation: 'fadeIn 0.5s ease-out' }}>✨</div>
+            <h3 style={{ fontSize: '2rem', marginBottom: '20px', color: 'var(--text-h)' }}>Booking Confirmed!</h3>
+            <p style={{ color: 'var(--text-dim)', marginBottom: '40px', lineHeight: '1.8', fontSize: '1.1rem' }}>
+              A notification has been sent to <strong>{service.proName || 'the assigned professional'}</strong>. They will arrive on <span style={{ color: 'var(--primary)', fontWeight: '700' }}>{bookingData.date}</span> at <span style={{ color: 'var(--primary)', fontWeight: '700' }}>{bookingData.time}</span>.
             </p>
             <div style={{ display: 'flex', flexDirection: 'column', gap: '15px' }}>
-              <button className="btn btn-primary" onClick={() => navigate('/bookings')}>Go to My Bookings</button>
-              <button className="btn" style={{ background: 'rgba(255,255,255,0.05)' }} onClick={() => navigate('/dashboard')}>Back to Dashboard</button>
+              <button className="btn btn-primary" style={{ padding: '15px' }} onClick={() => navigate('/bookings')}>Go to My Bookings</button>
+              <button className="btn" style={{ background: 'rgba(255,255,255,0.05)', padding: '15px' }} onClick={() => navigate('/dashboard')}>Back to Dashboard</button>
             </div>
           </div>
         )}
       </div>
+
+      {toast && (
+        <Toast 
+          message={toast.message} 
+          type={toast.type} 
+          onClose={() => setToast(null)} 
+        />
+      )}
     </div>
   );
 };

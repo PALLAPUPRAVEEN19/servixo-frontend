@@ -1,15 +1,29 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
+import axios from 'axios';
 import Layout from '../components/Layout';
 import '../styles/Services.css';
 
 const ManageUsersContent = () => {
-  const [users, setUsers] = useState([
-    { id: 1, name: 'John Doe', email: 'john@example.com', role: 'user', status: 'active' },
-    { id: 2, name: 'Sarah Miller', email: 'sarah@pro.com', role: 'professional', status: 'active' },
-    { id: 3, name: 'Mike Ross', email: 'mike@admin.com', role: 'admin', status: 'active' },
-    { id: 4, name: 'Jane Smith', email: 'jane@example.com', role: 'user', status: 'blocked' },
-    { id: 5, name: 'Alex Johnson', email: 'alex@pro.com', role: 'professional', status: 'active' }
-  ]);
+  const [users, setUsers] = useState([]);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    const fetchUsers = async () => {
+      try {
+        const token = localStorage.getItem('token') || '';
+        const response = await axios.get('/api/admin/users', {
+          headers: { Authorization: `Bearer ${token}` }
+        });
+        setUsers(response.data || []);
+      } catch (err) {
+        console.error('Failed to fetch users:', err);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchUsers();
+  }, []);
 
   const toggleBlock = (id) => {
     setUsers(users.map(u => u.id === id ? { ...u, status: u.status === 'blocked' ? 'active' : 'blocked' } : u));
@@ -18,6 +32,14 @@ const ManageUsersContent = () => {
   const deleteUser = (id) => {
     setUsers(users.filter(u => u.id !== id));
   };
+
+  if (loading) {
+    return (
+      <div className="search-container" style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', minHeight: '50vh' }}>
+        <p style={{ color: 'var(--text-dim)', fontSize: '1.2rem', fontWeight: 'bold' }}>Loading users...</p>
+      </div>
+    );
+  }
 
   return (
     <div className="search-container">
@@ -38,52 +60,64 @@ const ManageUsersContent = () => {
             </tr>
           </thead>
           <tbody>
-            {users.map((user) => (
-              <tr key={user.id} style={{ borderBottom: '1px solid rgba(255, 255, 255, 0.05)' }}>
-                <td style={{ padding: '20px', fontWeight: '600' }}>{user.name}</td>
-                <td style={{ padding: '20px' }}>{user.email}</td>
-                <td style={{ padding: '20px' }}>
-                  <span style={{ 
-                    padding: '4px 8px', 
-                    borderRadius: '6px', 
-                    fontSize: '0.75rem', 
-                    fontWeight: '800',
-                    background: user.role === 'admin' ? 'var(--accent)' : user.role === 'professional' ? 'var(--primary-glow)' : 'rgba(255, 255, 255, 0.05)',
-                    color: user.role === 'admin' ? 'white' : user.role === 'professional' ? 'var(--primary)' : 'var(--text-dim)'
-                  }}>
-                    {user.role.toUpperCase()}
-                  </span>
-                </td>
-                <td style={{ padding: '20px' }}>
-                  <span style={{ 
-                    color: user.status === 'blocked' ? 'var(--error)' : 'var(--success)', 
-                    fontWeight: '700',
-                    display: 'flex',
-                    alignItems: 'center',
-                    gap: '5px'
-                  }}>
-                    <span style={{ width: '8px', height: '8px', borderRadius: '50%', background: user.status === 'blocked' ? 'var(--error)' : 'var(--success)' }}></span>
-                    {user.status.charAt(0).toUpperCase() + user.status.slice(1)}
-                  </span>
-                </td>
-                <td style={{ padding: '20px', display: 'flex', gap: '8px' }}>
-                  <button className="btn" style={{ padding: '6px 12px', fontSize: '0.8rem', background: 'rgba(255, 255, 255, 0.05)' }}>Edit</button>
-                  <button 
-                    className="btn" 
-                    style={{ 
-                      padding: '6px 12px', 
-                      fontSize: '0.8rem', 
-                      background: user.status === 'blocked' ? 'var(--success)' : 'rgba(255, 255, 255, 0.05)',
-                      color: user.status === 'blocked' ? 'white' : 'inherit'
-                    }}
-                    onClick={() => toggleBlock(user.id)}
-                  >
-                    {user.status === 'blocked' ? 'Unblock' : 'Block'}
-                  </button>
-                  <button className="btn" style={{ padding: '6px 12px', fontSize: '0.8rem', background: 'rgba(255, 0, 0, 0.1)', color: 'var(--error)' }} onClick={() => deleteUser(user.id)}>Delete</button>
+            {users.length > 0 ? users.map((user) => {
+              const roleName = user.role?.name || user.role || 'USER';
+              const displayRole = roleName.toString().toUpperCase();
+              const statusStr = user.status || 'active';
+              
+              return (
+                <tr key={user.id} style={{ borderBottom: '1px solid rgba(255, 255, 255, 0.05)' }}>
+                  <td style={{ padding: '20px', fontWeight: '600', color: 'var(--text-main)' }}>{user.name}</td>
+                  <td style={{ padding: '20px', color: 'var(--text-dim)' }}>{user.email}</td>
+                  <td style={{ padding: '20px' }}>
+                    <span style={{ 
+                      padding: '4px 8px', 
+                      borderRadius: '6px', 
+                      fontSize: '0.75rem', 
+                      fontWeight: '800',
+                      background: displayRole === 'ADMIN' ? 'var(--accent)' : displayRole === 'PROFESSIONAL' ? 'var(--primary-glow)' : displayRole === 'SUPPORT' ? 'rgba(16, 185, 129, 0.2)' : 'rgba(255, 255, 255, 0.05)',
+                      color: displayRole === 'ADMIN' ? 'white' : displayRole === 'PROFESSIONAL' ? 'var(--primary)' : displayRole === 'SUPPORT' ? 'var(--success)' : 'var(--text-dim)'
+                    }}>
+                      {displayRole}
+                    </span>
+                  </td>
+                  <td style={{ padding: '20px' }}>
+                    <span style={{ 
+                      color: statusStr === 'blocked' ? 'var(--error)' : 'var(--success)', 
+                      fontWeight: '700',
+                      display: 'flex',
+                      alignItems: 'center',
+                      gap: '5px'
+                    }}>
+                      <span style={{ width: '8px', height: '8px', borderRadius: '50%', background: statusStr === 'blocked' ? 'var(--error)' : 'var(--success)' }}></span>
+                      {statusStr.charAt(0).toUpperCase() + statusStr.slice(1)}
+                    </span>
+                  </td>
+                  <td style={{ padding: '20px', display: 'flex', gap: '8px' }}>
+                    <button className="btn" style={{ padding: '6px 12px', fontSize: '0.8rem', background: 'rgba(255, 255, 255, 0.05)' }}>Edit</button>
+                    <button 
+                      className="btn" 
+                      style={{ 
+                        padding: '6px 12px', 
+                        fontSize: '0.8rem', 
+                        background: statusStr === 'blocked' ? 'var(--success)' : 'rgba(255, 255, 255, 0.05)',
+                        color: statusStr === 'blocked' ? 'white' : 'inherit'
+                      }}
+                      onClick={() => toggleBlock(user.id)}
+                    >
+                      {statusStr === 'blocked' ? 'Unblock' : 'Block'}
+                    </button>
+                    <button className="btn" style={{ padding: '6px 12px', fontSize: '0.8rem', background: 'rgba(255, 0, 0, 0.1)', color: 'var(--error)' }} onClick={() => deleteUser(user.id)}>Delete</button>
+                  </td>
+                </tr>
+              )
+            }) : (
+              <tr>
+                <td colSpan="5" style={{ padding: '40px', textAlign: 'center', color: 'var(--text-dim)' }}>
+                  No users found in the database.
                 </td>
               </tr>
-            ))}
+            )}
           </tbody>
         </table>
       </div>

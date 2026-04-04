@@ -1,5 +1,6 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useAuth } from '../context/AuthContext';
+import { proAPI } from '../services/api';
 import Layout from '../components/Layout';
 import '../styles/Profile.css';
 
@@ -15,13 +16,21 @@ const ProProfileContent = () => {
     bio: ''
   });
 
+  useEffect(() => {
+    if (user?.id) {
+      proAPI.getProfile(user.id).then(data => {
+        if(data) setProfile(prev => ({ ...prev, ...data }));
+      }).catch(err => console.error('Failed to load profile:', err));
+    }
+  }, [user]);
+
   const handleChange = (e) => {
     setProfile({ ...profile, [e.target.name]: e.target.value });
   };
 
   const handleUpdate = (e) => {
     e.preventDefault();
-    // TODO: Replace with real API call
+    // TODO: Replace with real API call (no updateProfile in api.js currently)
     alert('Professional profile updated successfully!');
   };
 

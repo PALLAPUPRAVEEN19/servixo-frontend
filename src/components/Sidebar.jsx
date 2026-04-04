@@ -24,7 +24,7 @@ const Sidebar = () => {
   ];
 
   const proLinks = [
-    { name: 'Dashboard', path: '/pro-dashboard' },
+    { name: 'Dashboard', path: '/professional-dashboard' },
     { name: 'Services', path: '/pro-services' },
     { name: 'Bookings', path: '/pro-bookings' },
     { name: 'Messages', path: '/messages' },
@@ -40,9 +40,13 @@ const Sidebar = () => {
   ];
 
   const getLinks = () => {
-    if (user?.role === 'admin') return adminLinks;
-    if (user?.role === 'professional') return proLinks;
-    if (user?.role === 'support') return supportLinks;
+    const userRole = typeof user?.role === 'string' 
+      ? user.role.toLowerCase() 
+      : user?.role?.name?.toLowerCase();
+
+    if (userRole === 'admin') return adminLinks;
+    if (userRole === 'professional') return proLinks;
+    if (userRole === 'support') return supportLinks;
     return userLinks;
   };
 
