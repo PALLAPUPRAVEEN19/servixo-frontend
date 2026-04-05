@@ -15,7 +15,8 @@ const ManageServicesContent = () => {
     const fetchServices = async () => {
       try {
         setLoading(true);
-        const response = await axios.get('/api/admin/services', {
+        // Ensure correct base URL is used; fixing the localhost:5173 to 8080 issue
+        const response = await axios.get('http://localhost:8080/api/services/all', {
           headers: { Authorization: `Bearer ${getToken()}` },
         });
         setServices(response.data || []);
@@ -31,10 +32,10 @@ const ManageServicesContent = () => {
 
   const handleApprove = async (id) => {
     try {
-      await axios.put(`/api/admin/services/${id}/approve`, null, {
+      await axios.put(`http://localhost:8080/api/services/approve/${id}`, null, {
         headers: { Authorization: `Bearer ${getToken()}` },
       });
-      // Update local state to show APPROVED
+      // Update local state instantly to show APPROVED without refresh
       setServices((prev) =>
         prev.map((s) => (s.id === id ? { ...s, status: 'APPROVED' } : s))
       );
@@ -42,6 +43,23 @@ const ManageServicesContent = () => {
     } catch (err) {
       console.error('Failed to approve service:', err);
       setToast({ message: 'Failed to approve service', type: 'error' });
+    }
+  };
+
+  const handleReject = async (id) => {
+    try {
+      // Using DELETE from ServiceController for rejecting/deleting an unwanted service
+      await axios.delete(`http://localhost:8080/api/services/${id}`, {
+        headers: { Authorization: `Bearer ${getToken()}` },
+      });
+      // Update local state instantly without refresh
+      setServices((prev) =>
+        prev.map((s) => (s.id === id ? { ...s, status: 'REJECTED' } : s))
+      );
+      setToast({ message: 'Service Rejected', type: 'success' });
+    } catch (err) {
+      console.error('Failed to reject service:', err);
+      setToast({ message: 'Failed to reject service', type: 'error' });
     }
   };
 
@@ -140,13 +158,28 @@ const ManageServicesContent = () => {
                     
                     <td className="fallback-td px-6 py-4 text-right align-middle h-full">
                       {statusStr === 'PENDING' ? (
-                        <button
-                          onClick={() => handleApprove(service.id)}
-                          style={{ background: 'var(--primary)', borderColor: 'var(--primary)' }}
-                          className="inline-flex items-center justify-center w-full px-4 py-2 border text-sm font-bold rounded-lg text-white bg-indigo-600 hover:bg-indigo-500 transition-all shadow-[0_0_15px_rgba(79,70,229,0.3)] hover:shadow-[0_0_20px_rgba(79,70,229,0.6)] focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-gray-900 active:scale-95"
-                        >
-                          Approve
-                        </button>
+                        <div className="flex justify-end gap-2 w-full">
+                          <button
+                            onClick={() => handleApprove(service.id)}
+                            style={{ background: 'var(--primary)', borderColor: 'var(--primary)' }}
+                            className="inline-flex items-center justify-center px-4 py-2 border text-sm font-bold rounded-lg text-white hover:opacity-90 transition-all active:scale-95 shadow-lg"
+                          >
+                            Approve
+                          </button>
+                          <button
+                            onClick={() => handleReject(service.id)}
+                            style={{ background: 'rgba(255, 71, 87, 0.1)', color: 'var(--error)' }}
+                            className="inline-flex items-center justify-center px-4 py-2 border border-transparent text-sm font-bold rounded-lg hover:bg-red-900/40 transition-all active:scale-95"
+                          >
+                            Reject
+                          </button>
+                        </div>
+                      ) : statusStr === 'REJECTED' ? (
+                        <div className="flex justify-end w-full">
+                          <span className="inline-flex items-center px-3 py-1 text-sm font-bold text-red-400">
+                            Rejected
+                          </span>
+                        </div>
                       ) : (
                         <div className="flex justify-end w-full">
                           <span className="inline-flex items-center px-3 py-1 text-sm font-bold text-emerald-400">

@@ -1,7 +1,7 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
+import axios from 'axios';
 import { useAuth } from '../context/AuthContext';
-import { useTickets } from '../context/TicketContext';
 import Layout from '../components/Layout';
 import '../styles/Services.css';
 
@@ -15,14 +15,50 @@ const statusColors = {
 const MyTicketsContent = () => {
   const navigate = useNavigate();
   const { user } = useAuth();
-  const { tickets } = useTickets();
+  
+  const [tickets, setTickets] = useState([]);
+  const [loading, setLoading] = useState(true);
   const [filterStatus, setFilterStatus] = useState('All');
 
-  const myTickets = tickets.filter(t => t.userId === user?.id);
+  useEffect(() => {
+    const fetchTickets = async () => {
+      if (!user?.id) {
+        setLoading(false);
+        return;
+      }
+      
+      console.log("USER ID:", user.id);
+      
+      try {
+        const token = localStorage.getItem('token') || '';
+        const res = await axios.get(`/api/tickets/user/${user.id}`, {
+          headers: { Authorization: `Bearer ${token}` }
+        });
+        
+        console.log("TICKETS:", res.data);
+        setTickets(res.data || []);
+      } catch (err) {
+        console.error("Failed to fetch tickets:", err);
+      } finally {
+        setLoading(false);
+      }
+    };
+    
+    fetchTickets();
+  }, [user?.id]);
 
-  const filteredTickets = myTickets.filter(t => {
-    if (filterStatus === 'All') return true;
-    return t.status === filterStatus.toLowerCase();
+  const statusMap = {
+    all: null,
+    open: "OPEN",
+    "in-progress": "IN_PROGRESS",
+    resolved: "RESOLVED",
+    closed: "CLOSED"
+  };
+
+  const filteredTickets = tickets.filter(ticket => {
+    const selectedTab = filterStatus.toLowerCase();
+    if (!statusMap[selectedTab]) return true;
+    return ticket.status?.toUpperCase() === statusMap[selectedTab];
   });
 
   const formatDate = (iso) => {
@@ -54,10 +90,14 @@ const MyTicketsContent = () => {
         </div>
       </div>
 
-      {filteredTickets.length > 0 ? (
+      {loading ? (
+        <div style={{ padding: '60px', textAlign: 'center', color: 'var(--text-dim)' }}>
+          Loading your tickets...
+        </div>
+      ) : filteredTickets.length > 0 ? (
         <div style={{ display: 'flex', flexDirection: 'column', gap: '15px' }}>
           {filteredTickets.map(ticket => {
-            const sc = statusColors[ticket.status] || statusColors.open;
+            const sc = statusColors[ticket.status?.toLowerCase()] || statusColors.open;
             return (
               <div
                 key={ticket.id}
@@ -83,12 +123,12 @@ const MyTicketsContent = () => {
                         background: sc.bg,
                         color: sc.color
                       }}>
-                        {ticket.status.toUpperCase()}
+                        {ticket.status?.toUpperCase()}
                       </span>
                     </div>
-                    <h4 style={{ fontSize: '1.05rem', marginBottom: '6px' }}>{ticket.subject}</h4>
+                    <h4 style={{ fontSize: '1.05rem', marginBottom: '6px' }}>{ticket.title || ticket.subject}</h4>
                     <p style={{ fontSize: '0.85rem', color: 'var(--text-dim)', lineHeight: '1.4' }}>
-                      {ticket.description.length > 120 ? ticket.description.slice(0, 120) + '...' : ticket.description}
+                      {ticket.description?.length > 120 ? ticket.description.slice(0, 120) + '...' : ticket.description}
                     </p>
                   </div>
                   <div style={{ textAlign: 'right', flexShrink: 0 }}>

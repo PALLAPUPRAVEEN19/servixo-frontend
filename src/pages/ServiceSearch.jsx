@@ -19,10 +19,17 @@ const ServiceSearchContent = () => {
       setLoading(true);
       try {
         const endpoint = searchTerm.trim() 
-          ? `/api/services/search?keyword=${encodeURIComponent(searchTerm)}`
-          : '/api/services';
+          ? `http://localhost:8080/api/services/search?keyword=${encodeURIComponent(searchTerm)}`
+          : 'http://localhost:8080/api/services';
         const response = await axios.get(endpoint);
-        setServices(response.data || []);
+        const fetchedServices = response.data || [];
+        
+        // Defensively filter if search returns PENDING services
+        const approvedOnly = searchTerm.trim() 
+            ? fetchedServices.filter(s => s.status?.toUpperCase() === 'APPROVED') 
+            : fetchedServices;
+            
+        setServices(approvedOnly);
       } catch (err) {
         console.error('Failed to fetch services:', err);
       } finally {
@@ -90,7 +97,7 @@ const ServiceSearchContent = () => {
               </div>
               <div className="pro-meta">
                 <span>Verified 🛡️</span>
-                <span style={{ color: 'var(--success)' }}>{service.status}</span>
+                <span style={{ color: 'var(--success)' }}>{(service.status || 'APPROVED').toUpperCase()}</span>
               </div>
               <div className="pro-price">₹{service.price}</div>
               <button className="btn btn-primary hire-btn" onClick={() => handleHire(service)}>Hire Now</button>

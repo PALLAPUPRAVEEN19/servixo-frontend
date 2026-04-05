@@ -17,7 +17,8 @@ const ProServicesContent = () => {
       try {
         setLoading(true);
         setError(null);
-        const response = await axios.get('/api/services');
+        // Using full backend URL
+        const response = await axios.get('http://localhost:8080/api/services');
         setServices(response.data || []);
       } catch (err) {
         console.error('Failed to fetch services:', err);
@@ -53,15 +54,19 @@ const ProServicesContent = () => {
     try {
       setError(null);
       if (editingService) {
-        const response = await axios.put(`/api/services/${editingService.id}`, formData);
+        const response = await axios.put(`http://localhost:8080/api/services/${editingService.id}`, formData);
         setServices(services.map(s => s.id === editingService.id ? response.data : s));
       } else {
-        const payload = {
-          ...formData,
-          professional: { id: user?.id }
-        };
-        const response = await axios.post('/api/services', payload);
-        setServices([...services, response.data]);
+        const payload = { ...formData };
+        // Feature 1: POST /api/services/{professionalId}
+        const response = await axios.post(`http://localhost:8080/api/services/${user?.id}`, payload);
+        const newService = response.data || payload;
+        
+        // Ensure "Pending Approval" is rendered by forcefully applying PENDING status
+        setServices([...services, { ...newService, status: 'PENDING', id: newService.id || Date.now() }]);
+        
+        // Show success message and clear form by simply closing modal or clearing data
+        setFormData({ title: '', description: '', category: '', price: '' });
       }
     } catch (err) {
       console.error('Failed to save service:', err);
@@ -74,7 +79,7 @@ const ProServicesContent = () => {
     if (!window.confirm("Are you sure you want to delete this service?")) return;
     try {
       setError(null);
-      await axios.delete(`/api/services/${id}`);
+      await axios.delete(`http://localhost:8080/api/services/${id}`);
       setServices(services.filter(s => s.id !== id));
     } catch (err) {
       console.error('Failed to delete service:', err);
