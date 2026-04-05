@@ -24,6 +24,7 @@ import SupportChat from './pages/SupportChat';
 import Analytics from './pages/Analytics';
 import KnowledgeBase from './pages/KnowledgeBase';
 import RoleBasedRoute from './components/RoleBasedRoute';
+import DashboardLayout from './components/DashboardLayout';
 import { 
   UserDashboard, 
   AdminDashboard, 
@@ -42,46 +43,55 @@ function App() {
       <Route path="/unauthorized" element={<Unauthorized />} />
 
       {/* User Routes */}
-      <Route element={<RoleBasedRoute allowedRoles={['user']} />}>
-        <Route path="/dashboard" element={<UserDashboard />} />
-        <Route path="/services" element={<UserServices />} />
-        <Route path="/booking" element={<BookingForm />} />
-        <Route path="/bookings" element={<Bookings />} />
-        <Route path="/feedback" element={<Feedback />} />
-        <Route path="/profile" element={<Profile />} />
-        <Route path="/ticket-page" element={<TicketPage />} />
-        <Route path="/my-ticket-detail" element={<MyTicketDetail />} />
+      <Route path="/dashboard" element={<RoleBasedRoute allowedRoles={['user']} />}>
+        <Route element={<DashboardLayout />}>
+          <Route index element={<UserDashboard />} />
+          <Route path="services" element={<UserServices />} />
+          <Route path="booking" element={<BookingForm />} />
+          <Route path="bookings" element={<Bookings />} />
+          <Route path="feedback" element={<Feedback />} />
+          <Route path="profile" element={<Profile />} />
+          <Route path="tickets" element={<TicketPage />} />
+          <Route path="settings" element={<SystemSettings />} />
+          <Route path="ticket-detail" element={<MyTicketDetail />} />
+        </Route>
       </Route>
 
       {/* Admin Routes */}
-      <Route element={<RoleBasedRoute allowedRoles={['admin']} />}>
-        <Route path="/admin-dashboard" element={<AdminDashboard />} />
-        <Route path="/manage-users" element={<ManageUsers />} />
-        <Route path="/manage-services" element={<AdminPanel />} />
-        <Route path="/revenue" element={<Revenue />} />
-        <Route path="/settings" element={<SystemSettings />} />
-        <Route path="/admin-tickets" element={<SupportPanel />} />
-        <Route path="/admin-ticket-details" element={<TicketDetails />} />
+      <Route path="/admin" element={<RoleBasedRoute allowedRoles={['admin']} />}>
+        <Route element={<DashboardLayout />}>
+          <Route index element={<AdminDashboard />} />
+          <Route path="users" element={<ManageUsers />} />
+          <Route path="manage-services" element={<AdminPanel />} />
+          <Route path="revenue" element={<Revenue />} />
+          <Route path="settings" element={<SystemSettings />} />
+          <Route path="tickets" element={<SupportPanel />} />
+          <Route path="ticket-details" element={<TicketDetails />} />
+        </Route>
       </Route>
 
       {/* Professional Routes */}
-      <Route element={<RoleBasedRoute allowedRoles={['professional', 'PROFESSIONAL']} />}>
-        <Route path="/professional-dashboard" element={<ProDashboard />} />
-        <Route path="/pro-profile" element={<ProProfile />} />
-        <Route path="/pro-services" element={<ProfessionalDashboard />} />
-        <Route path="/pro-bookings" element={<ProBookings />} />
-        <Route path="/messages" element={<Messages />} />
-        <Route path="/earnings" element={<Earnings />} />
+      <Route path="/professional" element={<RoleBasedRoute allowedRoles={['professional', 'PROFESSIONAL']} />}>
+        <Route element={<DashboardLayout />}>
+          <Route index element={<ProDashboard />} />
+          <Route path="profile" element={<ProProfile />} />
+          <Route path="services" element={<ProfessionalDashboard />} />
+          <Route path="bookings" element={<ProBookings />} />
+          <Route path="messages" element={<Messages />} />
+          <Route path="earnings" element={<Earnings />} />
+        </Route>
       </Route>
 
       {/* Support Routes */}
-      <Route element={<RoleBasedRoute allowedRoles={['support']} />}>
-        <Route path="/support-dashboard" element={<SupportDashboard />} />
-        <Route path="/tickets" element={<SupportPanel />} />
-        <Route path="/ticket-details" element={<TicketDetails />} />
-        <Route path="/support-chat" element={<SupportChat />} />
-        <Route path="/support-analytics" element={<Analytics />} />
-        <Route path="/kb" element={<KnowledgeBase />} />
+      <Route path="/support" element={<RoleBasedRoute allowedRoles={['support']} />}>
+        <Route element={<DashboardLayout />}>
+          <Route index element={<SupportDashboard />} />
+          <Route path="tickets" element={<SupportPanel />} />
+          <Route path="ticket-details" element={<TicketDetails />} />
+          <Route path="chat" element={<SupportChat />} />
+          <Route path="analytics" element={<Analytics />} />
+          <Route path="kb" element={<KnowledgeBase />} />
+        </Route>
       </Route>
 
       {/* Public Landing */}

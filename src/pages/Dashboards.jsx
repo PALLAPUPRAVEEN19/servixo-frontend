@@ -1,8 +1,7 @@
 import { useState, useEffect } from 'react';
 import axios from 'axios';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, Link } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
-import Layout from '../components/Layout';
 import '../styles/Dashboard.css';
 
 const UserDashboardContent = () => {
@@ -82,7 +81,7 @@ const UserDashboardContent = () => {
       <div className="profile-card">
         <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '20px' }}>
           <h3>Recent Bookings</h3>
-          <a href="/bookings" style={{ color: 'var(--primary)', fontWeight: '700', textDecoration: 'none', fontSize: '0.9rem' }}>View All History</a>
+          <Link to="/dashboard/bookings" style={{ color: 'var(--primary)', fontWeight: '700', textDecoration: 'none', fontSize: '0.9rem' }}>View All History</Link>
         </div>
         <div style={{ textAlign: 'center', padding: '20px', color: 'var(--text-dim)' }}>No recent bookings.</div>
       </div>
@@ -91,9 +90,7 @@ const UserDashboardContent = () => {
 };
 
 export const UserDashboard = () => (
-  <Layout>
-    <UserDashboardContent />
-  </Layout>
+  <UserDashboardContent />
 );
 
 const AdminDashboardContent = () => {
@@ -190,9 +187,7 @@ const AdminDashboardContent = () => {
 };
 
 export const AdminDashboard = () => (
-  <Layout>
-    <AdminDashboardContent />
-  </Layout>
+  <AdminDashboardContent />
 );
 
 const ProDashboardContent = () => {
@@ -258,9 +253,7 @@ const ProDashboardContent = () => {
 };
 
 export const ProDashboard = () => (
-  <Layout>
-    <ProDashboardContent />
-  </Layout>
+  <ProDashboardContent />
 );
 
 const SupportDashboardContent = () => {
@@ -312,9 +305,7 @@ const SupportDashboardContent = () => {
 };
 
 export const SupportDashboard = () => (
-  <Layout>
-    <SupportDashboardContent />
-  </Layout>
+  <SupportDashboardContent />
 );
 
 export const Unauthorized = () => (

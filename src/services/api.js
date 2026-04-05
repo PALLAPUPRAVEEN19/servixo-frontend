@@ -1,4 +1,4 @@
-const BASE_URL = '/api';
+export const BASE_URL = 'http://localhost:8080/api';
 
 async function request(method, path, body = null) {
   const options = {

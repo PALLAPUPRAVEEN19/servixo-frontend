@@ -54,21 +54,21 @@ const Navbar = () => {
               
               <div className="dropdown-links">
                 <Link 
-                  to={user?.role === 'professional' ? '/pro-profile' : '/profile'} 
+                  to={user?.role === 'professional' || user?.role?.name === 'PROFESSIONAL' ? '/professional/profile' : '/dashboard/profile'} 
                   className="dropdown-link"
                   onClick={() => setIsDropdownOpen(false)}
                 >
                   <span className="link-icon">👤</span> My Profile
                 </Link>
                 <Link 
-                  to="/settings" 
+                  to={user?.role === 'admin' || user?.role?.name === 'ADMIN' ? '/admin/settings' : '/dashboard/settings'} 
                   className="dropdown-link"
                   onClick={() => setIsDropdownOpen(false)}
                 >
                   <span className="link-icon">⚙️</span> Settings
                 </Link>
                 <Link 
-                  to="/kb" 
+                  to={user?.role === 'support' || user?.role?.name === 'SUPPORT' ? '/support/kb' : '/dashboard/tickets'} 
                   className="dropdown-link"
                   onClick={() => setIsDropdownOpen(false)}
                 >

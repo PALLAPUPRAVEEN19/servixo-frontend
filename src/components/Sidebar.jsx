@@ -7,36 +7,36 @@ const Sidebar = () => {
 
   const userLinks = [
     { name: 'Dashboard', path: '/dashboard' },
-    { name: 'Services', path: '/services' },
-    { name: 'Bookings', path: '/bookings' },
-    { name: 'Feedback', path: '/feedback' },
-    { name: 'Raise Ticket', path: '/raise-ticket' },
-    { name: 'My Tickets', path: '/my-tickets' }
+    { name: 'Services', path: '/dashboard/services' },
+    { name: 'Bookings', path: '/dashboard/bookings' },
+    { name: 'Feedback', path: '/dashboard/feedback' },
+    { name: 'Raise Ticket', path: '/dashboard/tickets' },
+    { name: 'Settings', path: '/dashboard/settings' }
   ];
 
   const adminLinks = [
-    { name: 'Dashboard', path: '/admin-dashboard' },
-    { name: 'Users', path: '/manage-users' },
-    { name: 'Services', path: '/manage-services' },
-    { name: 'Revenue', path: '/revenue' },
-    { name: 'Tickets', path: '/admin-tickets' },
-    { name: 'Settings', path: '/settings' }
+    { name: 'Dashboard', path: '/admin' },
+    { name: 'Users', path: '/admin/users' },
+    { name: 'Services', path: '/admin/manage-services' },
+    { name: 'Revenue', path: '/admin/revenue' },
+    { name: 'Tickets', path: '/admin/tickets' },
+    { name: 'Settings', path: '/admin/settings' }
   ];
 
   const proLinks = [
-    { name: 'Dashboard', path: '/professional-dashboard' },
-    { name: 'Services', path: '/pro-services' },
-    { name: 'Bookings', path: '/pro-bookings' },
-    { name: 'Messages', path: '/messages' },
-    { name: 'Earnings', path: '/earnings' }
+    { name: 'Dashboard', path: '/professional' },
+    { name: 'Services', path: '/professional/services' },
+    { name: 'Bookings', path: '/professional/bookings' },
+    { name: 'Messages', path: '/professional/messages' },
+    { name: 'Earnings', path: '/professional/earnings' }
   ];
 
   const supportLinks = [
-    { name: 'Dashboard', path: '/support-dashboard' },
-    { name: 'Tickets', path: '/tickets' },
-    { name: 'Chat', path: '/support-chat' },
-    { name: 'Analytics', path: '/support-analytics' },
-    { name: 'Knowledge Base', path: '/kb' }
+    { name: 'Dashboard', path: '/support' },
+    { name: 'Tickets', path: '/support/tickets' },
+    { name: 'Chat', path: '/support/chat' },
+    { name: 'Analytics', path: '/support/analytics' },
+    { name: 'Knowledge Base', path: '/support/kb' }
   ];
 
   const getLinks = () => {

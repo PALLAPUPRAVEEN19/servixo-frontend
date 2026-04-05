@@ -40,11 +40,11 @@ const Login = () => {
       console.log("ROLE:", normalizedRole);
 
       if (normalizedRole === "ADMIN") {
-        navigate("/admin-dashboard");
+        navigate("/admin");
       } else if (normalizedRole === "PROFESSIONAL") {
-        navigate("/professional-dashboard");
+        navigate("/professional");
       } else if (normalizedRole === "SUPPORT") {
-        navigate("/support-dashboard");
+        navigate("/support");
       } else {
         navigate("/dashboard");
       }
