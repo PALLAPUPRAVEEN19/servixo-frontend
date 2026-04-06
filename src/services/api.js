@@ -6,6 +6,20 @@ async function request(method, path, body = null) {
     headers: { 'Content-Type': 'application/json' },
   };
 
+  // 1. Store/Read JWT token securely from localStorage
+  const storedUser = localStorage.getItem('user');
+  if (storedUser) {
+    try {
+      const user = JSON.parse(storedUser);
+      // 2. Use token in all API calls
+      if (user.token) {
+        options.headers['Authorization'] = `Bearer ${user.token}`;
+      }
+    } catch (e) {
+      console.error('Error parsing user from localStorage', e);
+    }
+  }
+
   if (body) {
     options.body = JSON.stringify(body);
   }
