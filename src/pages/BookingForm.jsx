@@ -1,15 +1,15 @@
 import { useState } from 'react';
-import { useLocation, useNavigate } from 'react-router-dom';
-import axios from 'axios';
-import Layout from '../components/Layout';
+import { useLocation, useNavigate, useParams } from 'react-router-dom';
 import Toast from '../components/Toast';
 import '../styles/Services.css';
 import '../styles/Profile.css';
 import { useAuth } from '../context/AuthContext';
+import { bookingAPI } from '../services/api';
 
-const BookingFormContent = () => {
+const BookingForm = () => {
   const location = useLocation();
   const navigate = useNavigate();
+  const { serviceId } = useParams();
   const { user } = useAuth();
   
   const [step, setStep] = useState(1);
@@ -25,20 +25,19 @@ const BookingFormContent = () => {
     paymentMethod: 'card'
   });
 
-  const service = location.state?.service;
+  const service = location.state?.service || { price: 0, name: 'Selected Service' };
 
-  if (!service) {
+  if (!serviceId) {
     return (
       <div className="profile-page-container" style={{ textAlign: 'center', padding: '100px' }}>
         <h2>No service selected.</h2>
-        <button className="btn btn-primary" style={{ marginTop: '20px' }} onClick={() => navigate('/services')}>Browse Services</button>
+        <button className="btn btn-primary" style={{ marginTop: '20px' }} onClick={() => navigate('/user/services')}>Browse Services</button>
       </div>
     );
   }
 
   const handleChange = (e) => {
     setBookingData({ ...bookingData, [e.target.name]: e.target.value });
-    // Clear specific error as user types
     if (errors[e.target.name]) {
       setErrors({ ...errors, [e.target.name]: null });
     }
@@ -47,14 +46,27 @@ const BookingFormContent = () => {
   const nextStep = () => setStep(step + 1);
   const prevStep = () => setStep(step - 1);
 
-  // Check if form is filled out minimally to enable the button
   const isFormFilled = bookingData.date.trim() && bookingData.time.trim() && bookingData.address.trim();
 
+  const storedUser = localStorage.getItem("user") ? JSON.parse(localStorage.getItem("user")) : null;
+  const userData = user || storedUser;
+
   const handleContinueToPayment = async () => {
+    if (!userData?.id) {
+      setToast({ message: "Please log in to make a booking.", type: "error" });
+      navigate('/login');
+      return;
+    }
+
+    if (!serviceId) {
+      setToast({ message: "Service information is missing. Please try again.", type: "error" });
+      navigate('/user/services');
+      return;
+    }
+
     const newErrors = {};
     const today = new Date().toISOString().split('T')[0];
 
-    // Format Date: Ensure yyyy-mm-dd
     let formattedDate = bookingData.date;
     if (formattedDate && formattedDate.includes('-')) {
       const parts = formattedDate.split('-');
@@ -63,7 +75,6 @@ const BookingFormContent = () => {
       }
     }
 
-    // Format Time: Ensure HH:mm:ss
     let formattedTime = bookingData.time;
     if (formattedTime) {
       const timeParts = formattedTime.split(':');
@@ -72,7 +83,6 @@ const BookingFormContent = () => {
       }
     }
 
-    // 1. Validation Logic
     if (!formattedDate || formattedDate < today) {
       newErrors.date = "Service Date is required and must be a future date.";
     }
@@ -82,19 +92,51 @@ const BookingFormContent = () => {
     if (!bookingData.address || bookingData.address.trim().length < 10) {
       newErrors.address = "Service Address is required and must be at least 10 characters.";
     }
-    if (!user?.id || !service?.id) {
-      setToast({ message: "System Error: Missing user or service details.", type: "error" });
-      return;
-    }
 
     if (Object.keys(newErrors).length > 0) {
       setErrors(newErrors);
       return;
     }
 
-    // 2. Clear old errors & set processing
     setErrors({});
     setIsProcessing(true);
+
+    setTimeout(() => {
+      setIsProcessing(false);
+      
+      const bookingDataToSave = {
+        service,
+        serviceDate: bookingData.date,
+        arrivalTime: bookingData.time,
+        address: bookingData.address,
+        instructions: bookingData.description,
+        serviceId: serviceId
+      };
+      
+      localStorage.setItem('bookingData', JSON.stringify(bookingDataToSave));
+      
+      navigate('/user/confirm-booking');
+    }, 800);
+  };
+
+  const handlePaymentSubmit = async () => {
+    setIsProcessing(true);
+
+    let formattedDate = bookingData.date;
+    if (formattedDate && formattedDate.includes('-')) {
+      const parts = formattedDate.split('-');
+      if (parts[2] && parts[2].length === 4) {
+        formattedDate = `${parts[2]}-${parts[1]}-${parts[0]}`;
+      }
+    }
+
+    let formattedTime = bookingData.time;
+    if (formattedTime) {
+      const timeParts = formattedTime.split(':');
+      if (timeParts.length === 2) {
+        formattedTime = `${timeParts[0].padStart(2, '0')}:${timeParts[1].padStart(2, '0')}:00`;
+      }
+    }
 
     try {
       const payload = {
@@ -104,34 +146,27 @@ const BookingFormContent = () => {
         instructions: bookingData.description || ""
       };
       
-      const token = localStorage.getItem('token') || '';
-      
-      // 3. Call backend API with query parameters dynamically
-      await axios.post(`/api/bookings?userId=${user.id}&serviceId=${service.id}`, payload, {
-        headers: { Authorization: `Bearer ${token}` }
+      const response = await bookingAPI.create({
+        userId: user.id,
+        serviceId: serviceId,
+        ...payload
       });
       
-      // 4. Handle Success
-      setToast({ message: "Booking successful", type: "success" });
-      setStep(2); // Proceed to Payment step
+      setBookingData(prev => ({ ...prev, bookingId: response?.id }));
       
+      setTimeout(() => {
+        setIsProcessing(false);
+        setStep(4);
+      }, 1500); 
+
     } catch (err) {
       console.error('Failed to create booking:', err);
-      // 5. Handle Failure
-      setToast({ message: "Booking failed. Please try again.", type: "error" });
-    } finally {
+      const errorMessage = err.message?.includes('Failed') 
+        ? err.message 
+        : "Unable to create booking. Please check your details and try again.";
+      setToast({ message: `❌ ${errorMessage}`, type: "error" });
       setIsProcessing(false);
     }
-  };
-
-  const handlePaymentSubmit = () => {
-    // Booking is already created on backend during step 1.
-    // So this step simulates completing the payment and finishing up.
-    setIsProcessing(true);
-    setTimeout(() => {
-      setIsProcessing(false);
-      setStep(4);
-    }, 1500); 
   };
 
   return (
@@ -142,7 +177,7 @@ const BookingFormContent = () => {
         </div>
         <h2 style={{ fontSize: '2.2rem' }}>{step === 1 ? 'Booking Details' : step === 2 ? 'Secure Payment' : step === 3 ? 'Review & Confirm' : 'Confirmed!'}</h2>
         <p style={{ color: 'var(--text-main)', fontSize: '1.1rem', fontWeight: '600', marginTop: '10px' }}>
-          {service.name} <span style={{ color: 'var(--text-dim)', fontWeight: '400' }}>• Provided by {service.proName || 'Professional'}</span>
+          {service.name || service.title} <span style={{ color: 'var(--text-dim)', fontWeight: '400' }}>• Provided by {service.proName || 'Professional'}</span>
         </p>
       </div>
 
@@ -190,10 +225,10 @@ const BookingFormContent = () => {
                 placeholder="e.g. 123 Modern Ave, Suite 400" 
                 onChange={handleChange} 
                 value={bookingData.address} 
-                className="w-full"
                 style={{ 
                   borderColor: errors.address ? '#ef4444' : 'rgba(255,255,255,0.1)',
-                  background: 'rgba(0,0,0,0.2)'
+                  background: 'rgba(0,0,0,0.2)',
+                  width: '100%'
                 }} 
               />
               {errors.address && <p style={{ color: '#ef4444', fontSize: '0.85rem', marginTop: '6px', fontWeight: '500' }}>{errors.address}</p>}
@@ -225,7 +260,7 @@ const BookingFormContent = () => {
               onClick={handleContinueToPayment}
               disabled={!isFormFilled || isProcessing}
             >
-              {isProcessing ? "Processing..." : "Continue to Payment"}
+              {isProcessing ? "Processing..." : "Book Now"}
             </button>
           </form>
         )}
@@ -274,7 +309,7 @@ const BookingFormContent = () => {
           <div className="profile-form">
             <div style={{ background: 'rgba(255,255,255,0.02)', padding: '25px', borderRadius: '16px', border: '1px dashed rgba(255,255,255,0.1)' }}>
               <div style={{ display: 'flex', justifyContent: 'space-between', padding: '10px 0', color: 'var(--text-dim)' }}>
-                <span style={{ fontWeight: '500' }}>{service.name}</span>
+                <span style={{ fontWeight: '500' }}>{service.name || service.title}</span>
                 <span style={{ color: 'var(--text-main)', fontWeight: '700' }}>${typeof service.price === 'number' ? service.price.toFixed(2) : service.price.toString().replace('$','')}</span>
               </div>
               <div style={{ display: 'flex', justifyContent: 'space-between', padding: '10px 0', color: 'var(--text-dim)' }}>
@@ -299,7 +334,7 @@ const BookingFormContent = () => {
                 onClick={handlePaymentSubmit}
                 disabled={isProcessing}
               >
-                {isProcessing ? "Processing Payment..." : "Pay & Confirm Booking"}
+                {isProcessing ? "Processing Payment..." : "Pay & Book"}
               </button>
             </div>
           </div>
@@ -307,14 +342,70 @@ const BookingFormContent = () => {
 
         {step === 4 && (
           <div style={{ textAlign: 'center', padding: '40px 20px' }}>
-            <div style={{ fontSize: '6rem', marginBottom: '30px', animation: 'fadeIn 0.5s ease-out' }}>✨</div>
-            <h3 style={{ fontSize: '2rem', marginBottom: '20px', color: 'var(--text-h)' }}>Booking Confirmed!</h3>
-            <p style={{ color: 'var(--text-dim)', marginBottom: '40px', lineHeight: '1.8', fontSize: '1.1rem' }}>
-              A notification has been sent to <strong>{service.proName || 'the assigned professional'}</strong>. They will arrive on <span style={{ color: 'var(--primary)', fontWeight: '700' }}>{bookingData.date}</span> at <span style={{ color: 'var(--primary)', fontWeight: '700' }}>{bookingData.time}</span>.
+            <div style={{ fontSize: '6rem', marginBottom: '30px', animation: 'slideDown 0.5s ease-out' }}>🎉</div>
+            <h3 style={{ fontSize: '2.2rem', marginBottom: '10px', color: 'var(--success)', fontWeight: '900' }}>Booking Confirmed!</h3>
+            <p style={{ color: 'var(--text-dim)', marginBottom: '30px', fontSize: '1rem' }}>Your service has been successfully booked.</p>
+            
+            <div style={{ 
+              background: 'rgba(255, 255, 255, 0.05)', 
+              padding: '25px', 
+              borderRadius: '16px', 
+              border: '2px solid rgba(76, 175, 80, 0.3)',
+              marginBottom: '30px',
+              textAlign: 'left'
+            }}>
+              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '20px' }}>
+                <div>
+                  <p style={{ fontSize: '0.85rem', color: 'var(--text-dim)', marginBottom: '5px' }}>Service</p>
+                  <p style={{ fontWeight: '700', color: 'var(--text-main)' }}>{service.title || service.name}</p>
+                </div>
+                <div>
+                  <p style={{ fontSize: '0.85rem', color: 'var(--text-dim)', marginBottom: '5px' }}>Professional</p>
+                  <p style={{ fontWeight: '700', color: 'var(--text-main)' }}>{service.proName || 'Assigned Professional'}</p>
+                </div>
+                <div>
+                  <p style={{ fontSize: '0.85rem', color: 'var(--text-dim)', marginBottom: '5px' }}>Service Date & Time</p>
+                  <p style={{ fontWeight: '700', color: 'var(--primary)' }}>{bookingData.date} at {bookingData.time}</p>
+                </div>
+                <div>
+                  <p style={{ fontSize: '0.85rem', color: 'var(--text-dim)', marginBottom: '5px' }}>Amount Paid</p>
+                  <p style={{ fontWeight: '900', color: 'var(--success)', fontSize: '1.1rem' }}>
+                    ${(parseFloat(service.price?.toString().replace('$', '') || 0) + 5).toFixed(2)}
+                  </p>
+                </div>
+                <div style={{ gridColumn: '1 / -1' }}>
+                  <p style={{ fontSize: '0.85rem', color: 'var(--text-dim)', marginBottom: '5px' }}>Service Location</p>
+                  <p style={{ fontWeight: '600', color: 'var(--text-main)' }}>{bookingData.address}</p>
+                </div>
+              </div>
+            </div>
+            
+            <p style={{ color: 'var(--text-dim)', marginBottom: '40px', lineHeight: '1.8', fontSize: '0.95rem' }}>
+              A notification has been sent to the professional. You'll receive updates via email and SMS. Check your bookings page to track the status.
             </p>
-            <div style={{ display: 'flex', flexDirection: 'column', gap: '15px' }}>
-              <button className="btn btn-primary" style={{ padding: '15px' }} onClick={() => navigate('/bookings')}>Go to My Bookings</button>
-              <button className="btn" style={{ background: 'rgba(255,255,255,0.05)', padding: '15px' }} onClick={() => navigate('/dashboard')}>Back to Dashboard</button>
+            
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
+              <button 
+                className="btn btn-primary" 
+                style={{ padding: '15px', fontSize: '1rem', fontWeight: '700' }} 
+                onClick={() => navigate('/user/bookings')}
+              >
+                ✓ View My Bookings
+              </button>
+              <button 
+                className="btn" 
+                style={{ background: 'rgba(255,255,255,0.05)', padding: '15px', fontSize: '0.95rem' }} 
+                onClick={() => navigate('/user/services')}
+              >
+                Browse More Services
+              </button>
+              <button 
+                className="btn" 
+                style={{ background: 'rgba(255,255,255,0.05)', padding: '15px', fontSize: '0.95rem' }} 
+                onClick={() => navigate('/user/dashboard')}
+              >
+                Back to Dashboard
+              </button>
             </div>
           </div>
         )}
@@ -330,11 +421,5 @@ const BookingFormContent = () => {
     </div>
   );
 };
-
-const BookingForm = () => (
-  <Layout>
-    <BookingFormContent />
-  </Layout>
-);
 
 export default BookingForm;

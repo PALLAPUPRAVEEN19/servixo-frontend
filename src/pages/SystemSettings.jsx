@@ -1,8 +1,7 @@
 import { useState } from 'react';
-import Layout from '../components/Layout';
 import '../styles/Login.css';
 
-const SystemSettingsContent = () => {
+const SystemSettings = () => {
   const [settings, setSettings] = useState({
     commission: 15,
     enableAllServices: true,
@@ -113,10 +112,6 @@ const SystemSettingsContent = () => {
   );
 };
 
-const SystemSettings = () => (
-  <Layout>
-    <SystemSettingsContent />
-  </Layout>
-);
+
 
 export default SystemSettings;

@@ -1,10 +1,9 @@
 import { useState, useEffect } from 'react';
-import axios from 'axios';
 import { useAuth } from '../context/AuthContext';
-import Layout from '../components/Layout';
+import { ticketAPI } from '../services/api';
 import Toast from '../components/Toast';
 
-const TicketPageContent = () => {
+const TicketPage = () => {
   const { user } = useAuth();
   const [formData, setFormData] = useState({ title: '', description: '', category: 'General' });
   const [tickets, setTickets] = useState([]);
@@ -12,14 +11,15 @@ const TicketPageContent = () => {
   const [error, setError] = useState(null);
   const [toast, setToast] = useState(null);
 
-  const userId = user?.id;
+  const storedUser = localStorage.getItem('user') ? JSON.parse(localStorage.getItem('user')) : null;
+  const userId = user?.id || storedUser?.id;
 
   const fetchTickets = async () => {
     if (!userId) return;
     try {
       setLoading(true);
-      const res = await axios.get(`http://localhost:8080/api/tickets/user/${userId}`);
-      setTickets(res.data || []);
+      const data = await ticketAPI.getByUser(userId);
+      setTickets(data || []);
     } catch (err) {
       console.error(err);
       setError('Failed to fetch tickets.');
@@ -34,18 +34,20 @@ const TicketPageContent = () => {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
+    if (!userId) {
+      setToast({ message: 'Error: User ID is undefined. Please log in again.', type: 'error' });
+      return;
+    }
+    
     try {
-      if (!userId) return;
-      
       const payload = {
         title: formData.title,
+        subject: formData.title, // providing both title and subject to be safe
         description: formData.description,
         category: formData.category
       };
 
-      await axios.post(`http://localhost:8080/api/tickets/${userId}`, payload, {
-        headers: { "Content-Type": "application/json" }
-      });
+      await ticketAPI.create(userId, payload);
       
       setToast({ message: 'Ticket created successfully!', type: 'success' });
       setFormData({ title: '', description: '', category: 'General' });
@@ -146,11 +148,5 @@ const TicketPageContent = () => {
     </div>
   );
 };
-
-const TicketPage = () => (
-  <Layout>
-    <TicketPageContent />
-  </Layout>
-);
 
 export default TicketPage;

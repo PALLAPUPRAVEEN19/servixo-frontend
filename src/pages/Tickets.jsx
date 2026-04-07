@@ -1,10 +1,9 @@
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useTickets } from '../context/TicketContext';
-import Layout from '../components/Layout';
 import '../styles/Services.css';
 
-const TicketsContent = () => {
+const Tickets = () => {
   const navigate = useNavigate();
   const { tickets } = useTickets();
   const [searchTerm, setSearchTerm] = useState('');
@@ -90,10 +89,6 @@ const TicketsContent = () => {
   );
 };
 
-const Tickets = () => (
-  <Layout>
-    <TicketsContent />
-  </Layout>
-);
+
 
 export default Tickets;

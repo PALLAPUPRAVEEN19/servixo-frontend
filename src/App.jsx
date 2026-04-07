@@ -25,39 +25,54 @@ import Analytics from './pages/Analytics';
 import KnowledgeBase from './pages/KnowledgeBase';
 import RoleBasedRoute from './components/RoleBasedRoute';
 import DashboardLayout from './components/DashboardLayout';
-import { 
-  UserDashboard, 
-  AdminDashboard, 
-  ProDashboard, 
-  SupportDashboard, 
-  Unauthorized 
+import {
+  UserDashboard,
+  AdminDashboard,
+  ProDashboard,
+  SupportDashboard,
+  Unauthorized
 } from './pages/Dashboards';
+import ConfirmBooking from './pages/ConfirmBooking';
 import './styles/global.css';
 
+import { useEffect } from 'react';
+
 function App() {
+  useEffect(() => {
+    const allowedKeys = ["user"];
+    Object.keys(localStorage).forEach((key) => {
+      if (!allowedKeys.includes(key)) {
+        localStorage.removeItem(key);
+      }
+    });
+  }, []);
+
   return (
     <Routes>
       {/* Public Routes */}
+      <Route path="/" element={<LandingPage />} />
       <Route path="/login" element={<Login />} />
       <Route path="/signup" element={<Signup />} />
       <Route path="/unauthorized" element={<Unauthorized />} />
 
-      {/* User Routes */}
-      <Route path="/dashboard" element={<RoleBasedRoute allowedRoles={['user']} />}>
+      {/* ========== USER Routes ========== */}
+      <Route path="/user" element={<RoleBasedRoute allowedRoles={['user']} />}>
         <Route element={<DashboardLayout />}>
-          <Route index element={<UserDashboard />} />
+          <Route index element={<Navigate to="/user/dashboard" replace />} />
+          <Route path="dashboard" element={<UserDashboard />} />
           <Route path="services" element={<UserServices />} />
-          <Route path="booking" element={<BookingForm />} />
+          <Route path="booking/:serviceId" element={<BookingForm />} />
+          <Route path="confirm-booking" element={<ConfirmBooking />} />
           <Route path="bookings" element={<Bookings />} />
           <Route path="feedback" element={<Feedback />} />
           <Route path="profile" element={<Profile />} />
           <Route path="tickets" element={<TicketPage />} />
-          <Route path="settings" element={<SystemSettings />} />
           <Route path="ticket-detail" element={<MyTicketDetail />} />
+          <Route path="settings" element={<SystemSettings />} />
         </Route>
       </Route>
 
-      {/* Admin Routes */}
+      {/* ========== ADMIN Routes ========== */}
       <Route path="/admin" element={<RoleBasedRoute allowedRoles={['admin']} />}>
         <Route element={<DashboardLayout />}>
           <Route index element={<AdminDashboard />} />
@@ -70,8 +85,8 @@ function App() {
         </Route>
       </Route>
 
-      {/* Professional Routes */}
-      <Route path="/professional" element={<RoleBasedRoute allowedRoles={['professional', 'PROFESSIONAL']} />}>
+      {/* ========== PROFESSIONAL Routes ========== */}
+      <Route path="/professional" element={<RoleBasedRoute allowedRoles={['professional']} />}>
         <Route element={<DashboardLayout />}>
           <Route index element={<ProDashboard />} />
           <Route path="profile" element={<ProProfile />} />
@@ -82,7 +97,7 @@ function App() {
         </Route>
       </Route>
 
-      {/* Support Routes */}
+      {/* ========== SUPPORT Routes ========== */}
       <Route path="/support" element={<RoleBasedRoute allowedRoles={['support']} />}>
         <Route element={<DashboardLayout />}>
           <Route index element={<SupportDashboard />} />
@@ -94,8 +109,7 @@ function App() {
         </Route>
       </Route>
 
-      {/* Public Landing */}
-      <Route path="/" element={<LandingPage />} />
+      {/* Catch-all: redirect to landing */}
       <Route path="*" element={<Navigate to="/" replace />} />
     </Routes>
   );

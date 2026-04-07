@@ -1,9 +1,8 @@
 import { useState, useEffect } from 'react';
-import axios from 'axios';
-import Layout from '../components/Layout';
+import { serviceAPI } from '../services/api';
 import Toast from '../components/Toast';
 
-const AdminPanelContent = () => {
+const AdminPanel = () => {
   const [services, setServices] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
@@ -13,8 +12,8 @@ const AdminPanelContent = () => {
     const fetchServices = async () => {
       try {
         setLoading(true);
-        const res = await axios.get('http://localhost:8080/api/services/all');
-        setServices(res.data || []);
+        const data = await serviceAPI.getAll();
+        setServices(data || []);
       } catch (err) {
         console.error(err);
         setError('Failed to fetch services.');
@@ -27,7 +26,7 @@ const AdminPanelContent = () => {
 
   const handleApprove = async (id) => {
     try {
-      await axios.put(`http://localhost:8080/api/services/approve/${id}`);
+      await serviceAPI.approve(id);
       setToast({ message: 'Service successfully approved.', type: 'success' });
       setServices(prev => prev.map(s => s.id === id ? { ...s, status: 'APPROVED' } : s));
     } catch (err) {
@@ -36,10 +35,22 @@ const AdminPanelContent = () => {
     }
   };
 
+  const handleReject = async (id) => {
+    try {
+      await serviceAPI.reject(id);
+      setToast({ message: 'Service successfully rejected.', type: 'success' });
+      setServices(prev => prev.map(s => s.id === id ? { ...s, status: 'REJECTED' } : s));
+    } catch (err) {
+      console.error(err);
+      setToast({ message: 'Failed to reject service.', type: 'error' });
+    }
+  };
+
   const getBadgeStyle = (status) => {
     const s = status?.toUpperCase() || 'PENDING';
     if (s === 'PENDING') return { backgroundColor: '#eab308', color: 'white', padding: '6px 12px', borderRadius: '12px', fontSize: '0.8rem', fontWeight: 'bold' };
     if (s === 'APPROVED') return { backgroundColor: '#22c55e', color: 'white', padding: '6px 12px', borderRadius: '12px', fontSize: '0.8rem', fontWeight: 'bold' };
+    if (s === 'REJECTED') return { backgroundColor: '#ef4444', color: 'white', padding: '6px 12px', borderRadius: '12px', fontSize: '0.8rem', fontWeight: 'bold' };
     return { backgroundColor: '#6b7280', color: 'white', padding: '6px 12px', borderRadius: '12px', fontSize: '0.8rem', fontWeight: 'bold' };
   };
 
@@ -74,21 +85,38 @@ const AdminPanelContent = () => {
                     </span>
                   </td>
                   <td style={{ padding: '12px', textAlign: 'right' }}>
-                    <button 
-                      onClick={() => handleApprove(service.id)}
-                      disabled={service.status?.toUpperCase() === 'APPROVED'}
-                      style={{ 
-                        padding: '8px 16px', 
-                        background: service.status?.toUpperCase() === 'APPROVED' ? '#555' : '#3b82f6', 
-                        color: 'white', 
-                        border: 'none', 
-                        borderRadius: '5px', 
-                        cursor: service.status?.toUpperCase() === 'APPROVED' ? 'not-allowed' : 'pointer', 
-                        fontWeight: 'bold' 
-                      }}
-                    >
-                      {service.status?.toUpperCase() === 'APPROVED' ? 'Approved' : 'Approve'}
-                    </button>
+                    <div style={{ display: 'flex', gap: '8px', justifyContent: 'flex-end' }}>
+                      <button 
+                        onClick={() => handleApprove(service.id)}
+                        disabled={service.status?.toUpperCase() === 'APPROVED' || service.status?.toUpperCase() === 'REJECTED'}
+                        style={{ 
+                          padding: '8px 16px', 
+                          background: (service.status?.toUpperCase() === 'APPROVED' || service.status?.toUpperCase() === 'REJECTED') ? '#555' : '#3b82f6', 
+                          color: 'white', 
+                          border: 'none', 
+                          borderRadius: '5px', 
+                          cursor: (service.status?.toUpperCase() === 'APPROVED' || service.status?.toUpperCase() === 'REJECTED') ? 'not-allowed' : 'pointer', 
+                          fontWeight: 'bold' 
+                        }}
+                      >
+                        {service.status?.toUpperCase() === 'APPROVED' ? 'Approved' : 'Approve'}
+                      </button>
+                      <button 
+                        onClick={() => handleReject(service.id)}
+                        disabled={service.status?.toUpperCase() === 'APPROVED' || service.status?.toUpperCase() === 'REJECTED'}
+                        style={{ 
+                          padding: '8px 16px', 
+                          background: (service.status?.toUpperCase() === 'APPROVED' || service.status?.toUpperCase() === 'REJECTED') ? '#555' : 'rgba(239, 68, 68, 0.2)', 
+                          color: (service.status?.toUpperCase() === 'APPROVED' || service.status?.toUpperCase() === 'REJECTED') ? '#aaa' : '#ef4444', 
+                          border: '1px solid ' + ((service.status?.toUpperCase() === 'APPROVED' || service.status?.toUpperCase() === 'REJECTED') ? '#555' : '#ef4444'), 
+                          borderRadius: '5px', 
+                          cursor: (service.status?.toUpperCase() === 'APPROVED' || service.status?.toUpperCase() === 'REJECTED') ? 'not-allowed' : 'pointer', 
+                          fontWeight: 'bold' 
+                        }}
+                      >
+                        {service.status?.toUpperCase() === 'REJECTED' ? 'Rejected' : 'Reject'}
+                      </button>
+                    </div>
                   </td>
                 </tr>
               ))}
@@ -104,11 +132,5 @@ const AdminPanelContent = () => {
     </div>
   );
 };
-
-const AdminPanel = () => (
-  <Layout>
-    <AdminPanelContent />
-  </Layout>
-);
 
 export default AdminPanel;

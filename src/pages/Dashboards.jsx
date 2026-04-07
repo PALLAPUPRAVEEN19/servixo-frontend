@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
-import axios from 'axios';
 import { useNavigate, Link } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
+import { adminAPI } from '../services/api';
 import '../styles/Dashboard.css';
 
 const UserDashboardContent = () => {
@@ -58,7 +58,7 @@ const UserDashboardContent = () => {
                   cursor: 'pointer',
                   transition: 'var(--transition)'
                 }}
-                onClick={() => navigate('/services', { state: { category: service.name } })}
+                onClick={() => navigate('/user/services', { state: { category: service.name } })}
               >
                 <div style={{ fontSize: '2rem', marginBottom: '10px' }}>{service.icon}</div>
                 <div style={{ fontWeight: '700', color: 'var(--text-main)' }}>{service.name}</div>
@@ -81,7 +81,7 @@ const UserDashboardContent = () => {
       <div className="profile-card">
         <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '20px' }}>
           <h3>Recent Bookings</h3>
-          <Link to="/dashboard/bookings" style={{ color: 'var(--primary)', fontWeight: '700', textDecoration: 'none', fontSize: '0.9rem' }}>View All History</Link>
+          <Link to="/user/bookings" style={{ color: 'var(--primary)', fontWeight: '700', textDecoration: 'none', fontSize: '0.9rem' }}>View All History</Link>
         </div>
         <div style={{ textAlign: 'center', padding: '20px', color: 'var(--text-dim)' }}>No recent bookings.</div>
       </div>
@@ -98,15 +98,9 @@ const AdminDashboardContent = () => {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    const token = localStorage.getItem('token') || '';
-    
-    axios.get("/api/admin/stats", {
-      headers: {
-        Authorization: `Bearer ${token}`
-      }
-    })
-    .then(res => {
-      setStats(res.data);
+    adminAPI.getStats()
+    .then(data => {
+      setStats(data);
       setLoading(false);
     })
     .catch(err => {

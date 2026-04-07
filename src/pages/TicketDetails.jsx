@@ -2,11 +2,10 @@ import { useState } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import { useTickets } from '../context/TicketContext';
-import Layout from '../components/Layout';
 import Toast from '../components/Toast';
 import '../styles/Services.css';
 
-const TicketDetailsContent = () => {
+const TicketDetails = () => {
   const location = useLocation();
   const navigate = useNavigate();
   const { user } = useAuth();
@@ -156,10 +155,6 @@ const TicketDetailsContent = () => {
   );
 };
 
-const TicketDetails = () => (
-  <Layout>
-    <TicketDetailsContent />
-  </Layout>
-);
+
 
 export default TicketDetails;

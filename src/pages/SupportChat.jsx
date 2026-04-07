@@ -1,8 +1,7 @@
 import { useState } from 'react';
-import Layout from '../components/Layout';
 import '../styles/Dashboard.css';
 
-const SupportChatContent = () => {
+const SupportChat = () => {
   const [activeChat, setActiveChat] = useState(1);
   const [chats] = useState([
     { id: 1, name: 'John Doe', lastMsg: 'I have an issue with payment', time: '2m ago', online: true, type: 'User' },
@@ -90,10 +89,6 @@ const SupportChatContent = () => {
   );
 };
 
-const SupportChat = () => (
-  <Layout>
-    <SupportChatContent />
-  </Layout>
-);
+
 
 export default SupportChat;

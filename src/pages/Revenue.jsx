@@ -1,9 +1,8 @@
 import { useState, useEffect } from 'react';
 import axios from 'axios';
-import Layout from '../components/Layout';
 import '../styles/Services.css';
 
-const RevenueContent = () => {
+const Revenue = () => {
   const [transactions, setTransactions] = useState([]);
   const [totalRevenue, setTotalRevenue] = useState(0);
   const [loading, setLoading] = useState(true);
@@ -11,18 +10,12 @@ const RevenueContent = () => {
   useEffect(() => {
     const fetchData = async () => {
       try {
-        const token = localStorage.getItem('token') || '';
-        
         // Fetch all transactions from the payment endpoint
-        const txnsResponse = await axios.get('/api/payments', {
-          headers: { Authorization: `Bearer ${token}` }
-        });
+        const txnsResponse = await axios.get('/api/payments');
         setTransactions(txnsResponse.data || []);
 
         // Fetch overall revenue stats (Bonus addition since it's the Revenue page)
-        const revResponse = await axios.get('/api/admin/revenue', {
-          headers: { Authorization: `Bearer ${token}` }
-        });
+        const revResponse = await axios.get('/api/admin/revenue');
         setTotalRevenue(revResponse.data || 0);
 
       } catch (err) {
@@ -128,10 +121,6 @@ const RevenueContent = () => {
   );
 };
 
-const Revenue = () => (
-  <Layout>
-    <RevenueContent />
-  </Layout>
-);
+
 
 export default Revenue;

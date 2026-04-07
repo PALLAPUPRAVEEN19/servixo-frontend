@@ -1,17 +1,19 @@
-import { NavLink } from 'react-router-dom';
+import { useLocation, useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import '../styles/Sidebar.css';
 
 const Sidebar = () => {
   const { user } = useAuth();
+  const navigate = useNavigate();
+  const location = useLocation();
 
   const userLinks = [
-    { name: 'Dashboard', path: '/dashboard' },
-    { name: 'Services', path: '/dashboard/services' },
-    { name: 'Bookings', path: '/dashboard/bookings' },
-    { name: 'Feedback', path: '/dashboard/feedback' },
-    { name: 'Raise Ticket', path: '/dashboard/tickets' },
-    { name: 'Settings', path: '/dashboard/settings' }
+    { name: 'Dashboard', path: '/user/dashboard' },
+    { name: 'Services', path: '/user/services' },
+    { name: 'Bookings', path: '/user/bookings' },
+    { name: 'Feedback', path: '/user/feedback' },
+    { name: 'Raise Ticket', path: '/user/tickets' },
+    { name: 'Settings', path: '/user/settings' }
   ];
 
   const adminLinks = [
@@ -40,8 +42,8 @@ const Sidebar = () => {
   ];
 
   const getLinks = () => {
-    const userRole = typeof user?.role === 'string' 
-      ? user.role.toLowerCase() 
+    const userRole = typeof user?.role === 'string'
+      ? user.role.toLowerCase()
       : user?.role?.name?.toLowerCase();
 
     if (userRole === 'admin') return adminLinks;
@@ -55,13 +57,14 @@ const Sidebar = () => {
       <div className="sidebar-logo">SERVIXO</div>
       <nav className="sidebar-nav">
         {getLinks().map(link => (
-          <NavLink 
-            key={link.path} 
-            to={link.path} 
-            className={({ isActive }) => `nav-link ${isActive ? 'active' : ''}`}
+          <div
+            key={link.path}
+            onClick={() => navigate(link.path)}
+            className={`nav-link ${location.pathname === link.path ? 'active' : ''}`}
+            style={{ cursor: 'pointer' }}
           >
             {link.name}
-          </NavLink>
+          </div>
         ))}
       </nav>
     </aside>

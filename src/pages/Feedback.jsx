@@ -1,10 +1,9 @@
 import { useState, useEffect } from 'react';
-import Layout from '../components/Layout';
 import '../styles/Services.css';
 import { useAuth } from '../context/AuthContext';
 import { feedbackAPI } from '../services/api';
 
-const FeedbackContent = () => {
+const Feedback = () => {
   const { user } = useAuth();
   const [rating, setRating] = useState(0);
   const [comment, setComment] = useState('');
@@ -93,10 +92,6 @@ const FeedbackContent = () => {
   );
 };
 
-const Feedback = () => (
-  <Layout>
-    <FeedbackContent />
-  </Layout>
-);
+
 
 export default Feedback;

@@ -1,10 +1,9 @@
 import { useState, useEffect } from 'react';
 import { useAuth } from '../context/AuthContext';
 import { proAPI } from '../services/api';
-import Layout from '../components/Layout';
 import '../styles/Profile.css';
 
-const ProProfileContent = () => {
+const ProProfile = () => {
   const { user } = useAuth();
   const [profile, setProfile] = useState({
     name: user?.name || '',
@@ -106,10 +105,6 @@ const ProProfileContent = () => {
   );
 };
 
-const ProProfile = () => (
-  <Layout>
-    <ProProfileContent />
-  </Layout>
-);
+
 
 export default ProProfile;

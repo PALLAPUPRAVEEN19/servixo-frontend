@@ -1,7 +1,6 @@
-import Layout from '../components/Layout';
 import '../styles/Services.css';
 
-const KnowledgeBaseContent = () => {
+const KnowledgeBase = () => {
   const articles = [
     { title: 'Getting Started with SERVIXO', category: 'General', views: '1.2k' },
     { title: 'Updating Your Professional Skills', category: 'Professional', views: '850' },
@@ -43,10 +42,6 @@ const KnowledgeBaseContent = () => {
   );
 };
 
-const KnowledgeBase = () => (
-  <Layout>
-    <KnowledgeBaseContent />
-  </Layout>
-);
+
 
 export default KnowledgeBase;

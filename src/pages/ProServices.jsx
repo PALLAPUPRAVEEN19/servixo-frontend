@@ -1,11 +1,10 @@
 import { useState, useEffect } from 'react';
 import axios from 'axios';
 import { useAuth } from '../context/AuthContext';
-import Layout from '../components/Layout';
 import '../styles/Services.css';
 import '../styles/Profile.css';
 
-const ProServicesContent = () => {
+const ProServices = () => {
   const { user } = useAuth();
   const [services, setServices] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -204,10 +203,6 @@ const ProServicesContent = () => {
   );
 };
 
-const ProServices = () => (
-  <Layout>
-    <ProServicesContent />
-  </Layout>
-);
+
 
 export default ProServices;

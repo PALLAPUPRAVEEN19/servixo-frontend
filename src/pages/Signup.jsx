@@ -49,13 +49,13 @@ const Signup = () => {
       console.log("ROLE:", normalizedRole);
 
       if (normalizedRole === "ADMIN") {
-        navigate("/admin-dashboard");
+        navigate("/admin");
       } else if (normalizedRole === "PROFESSIONAL") {
-        navigate("/professional-dashboard");
+        navigate("/professional");
       } else if (normalizedRole === "SUPPORT") {
-        navigate("/support-dashboard");
+        navigate("/support");
       } else {
-        navigate("/dashboard");
+        navigate("/user/dashboard");
       }
     } catch (err) {
       setError(err.message || 'Registration failed. Please try again.');

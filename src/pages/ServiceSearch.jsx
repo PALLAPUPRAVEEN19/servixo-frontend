@@ -2,11 +2,10 @@ import { useState, useEffect } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import axios from 'axios';
 import { serviceAPI } from '../services/api';
-import Layout from '../components/Layout';
 
 const categories = ['All', 'Plumbing', 'Cleaning', 'Electrician', 'Painting', 'Outdoor', 'Education', 'Logistics'];
 
-const ServiceSearchContent = () => {
+const ServiceSearch = () => {
   const navigate = useNavigate();
   const location = useLocation();
   const [searchTerm, setSearchTerm] = useState('');
@@ -51,8 +50,9 @@ const ServiceSearchContent = () => {
     return matchesCategory;
   });
 
-  const handleHire = (service) => {
-    navigate('/booking', { state: { service } });
+  const handleHire = (serviceId) => {
+    console.log("Hire clicked", serviceId);
+    navigate(`/booking/${serviceId}`);
   };
 
   return (
@@ -100,7 +100,7 @@ const ServiceSearchContent = () => {
                 <span style={{ color: 'var(--success)' }}>{(service.status || 'APPROVED').toUpperCase()}</span>
               </div>
               <div className="pro-price">₹{service.price}</div>
-              <button className="btn btn-primary hire-btn" onClick={() => handleHire(service)}>Hire Now</button>
+              <button className="btn btn-primary hire-btn" onClick={() => handleHire(service.id)}>Hire Now</button>
             </div>
           ))}
           {filteredServices.length === 0 && (
@@ -114,10 +114,6 @@ const ServiceSearchContent = () => {
   );
 };
 
-const ServiceSearch = () => (
-  <Layout>
-    <ServiceSearchContent />
-  </Layout>
-);
+
 
 export default ServiceSearch;

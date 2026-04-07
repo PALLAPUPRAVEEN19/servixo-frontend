@@ -1,131 +1,81 @@
-export const BASE_URL = 'http://localhost:8080/api';
-
-async function request(method, path, body = null) {
-  const options = {
-    method,
-    headers: { 'Content-Type': 'application/json' },
-  };
-
-  // 1. Store/Read JWT token securely from localStorage
-  const storedUser = localStorage.getItem('user');
-  if (storedUser) {
-    try {
-      const user = JSON.parse(storedUser);
-      // 2. Use token in all API calls
-      if (user.token) {
-        options.headers['Authorization'] = `Bearer ${user.token}`;
-      }
-    } catch (e) {
-      console.error('Error parsing user from localStorage', e);
-    }
-  }
-
-  if (body) {
-    options.body = JSON.stringify(body);
-  }
-
-  const res = await fetch(`${BASE_URL}${path}`, options);
-
-  // Handle non-JSON responses (e.g. plain text, double, void)
-  const contentType = res.headers.get('content-type');
-
-  if (!res.ok) {
-    let errorMessage = `Request failed (${res.status})`;
-    try {
-      if (contentType && contentType.includes('application/json')) {
-        const errorData = await res.json();
-        errorMessage = errorData.message || errorData.error || JSON.stringify(errorData);
-      } else {
-        errorMessage = await res.text() || errorMessage;
-      }
-    } catch {
-      // keep default errorMessage
-    }
-    throw new Error(errorMessage);
-  }
-
-  // Empty response
-  if (res.status === 204 || res.headers.get('content-length') === '0') {
-    return null;
-  }
-
-  if (contentType && contentType.includes('application/json')) {
-    return res.json();
-  }
-
-  // Plain text / number responses (e.g. revenue endpoint returns a double)
-  return res.text();
-}
+import api from '../api/axios';
 
 // =================== AUTH ===================
 export const authAPI = {
   login: (email, password) =>
-    request('POST', '/auth/login', { email, password }),
+    api.post('/auth/login', { email, password }).then(res => res.data),
 
   register: (name, email, password, roleName) =>
-    request('POST', '/auth/register', {
-      name,
-      email,
-      password,
-      roleName
-    }),
+    api.post('/auth/register', { name, email, password, roleName }).then(res => res.data),
 };
 
 // =================== SERVICES ===================
 export const serviceAPI = {
-  getApproved: () => request('GET', '/services'),
-  add: (service) => request('POST', '/services', service),
+  getApproved: () => api.get('/services').then(res => res.data),
+  getAll: () => api.get('/services/all').then(res => res.data),
+  search: (keyword) => api.get(`/services/search?keyword=${encodeURIComponent(keyword)}`).then(res => res.data),
+  getByProfessional: (proId) => api.get(`/services/professional/${proId}`).then(res => res.data),
+  createForPro: (proId, service) => api.post(`/services/${proId}`, service).then(res => res.data),
+  approve: (id) => api.put(`/services/approve/${id}`).then(res => res.data),
+  reject: (id) => api.put(`/services/reject/${id}`).then(res => res.data),
+  add: (service) => api.post('/services', service).then(res => res.data),
 };
 
 // =================== BOOKINGS ===================
 export const bookingAPI = {
-  create: (booking) => request('POST', '/bookings', booking),
-  getByUser: (userId) => request('GET', `/bookings/user/${userId}`),
+  create: (booking) => {
+    const { userId, serviceId, ...payload } = booking;
+    return api.post(`/bookings?userId=${userId}&serviceId=${serviceId}`, payload).then(res => res.data);
+  },
+  getByUser: (userId) => api.get(`/bookings/user/${userId}`).then(res => res.data),
+  updateStatus: (id, status) => api.put(`/bookings/${id}/status?status=${status}`).then(res => res.data),
 };
 
 // =================== TICKETS ===================
 export const ticketAPI = {
-  create: (ticket) => request('POST', '/tickets', ticket),
-  getByUser: (userId) => request('GET', `/tickets/user/${userId}`),
-  updateStatus: (id, status) => request('PUT', `/tickets/${id}?status=${status}`),
+  create: (userId, ticket) => api.post(`/tickets/${userId}`, ticket).then(res => res.data),
+  getAll: () => api.get('/tickets').then(res => res.data),
+  getByUser: (userId) => api.get(`/tickets/user/${userId}`).then(res => res.data),
+  updateStatus: (id, status) => api.put(`/tickets/${id}?status=${status}`).then(res => res.data),
 };
 
 // =================== ADMIN ===================
 export const adminAPI = {
-  getUsers: () => request('GET', '/admin/users'),
-  getServices: () => request('GET', '/admin/services'),
-  getTickets: () => request('GET', '/admin/tickets'),
-  getRevenue: () => request('GET', '/admin/revenue'),
-  approveService: (id) => request('PUT', `/admin/services/${id}/approve`),
-  updateTicket: (id, status) => request('PUT', `/admin/tickets/${id}?status=${status}`),
+  getUsers: () => api.get('/admin/users').then(res => res.data),
+  getStats: () => api.get('/admin/stats').then(res => res.data),
+  getServices: () => api.get('/admin/services').then(res => res.data),
+  getTickets: () => api.get('/admin/tickets').then(res => res.data),
+  getRevenue: () => api.get('/admin/revenue').then(res => res.data),
+  approveService: (id) => api.put(`/admin/services/${id}/approve`).then(res => res.data),
+  updateTicket: (id, status) => api.put(`/admin/tickets/${id}?status=${status}`).then(res => res.data),
 };
 
 // =================== SUPPORT ===================
 export const supportAPI = {
-  getTickets: () => request('GET', '/support/tickets'),
-  getTicketsByStatus: (status) => request('GET', `/support/tickets/status?status=${status}`),
-  updateTicket: (id, status) => request('PUT', `/support/tickets/${id}?status=${status}`),
-  deleteTicket: (id) => request('DELETE', `/support/tickets/${id}`),
+  getTickets: () => api.get('/support/tickets').then(res => res.data),
+  getTicketsByStatus: (status) => api.get(`/support/tickets/status?status=${status}`).then(res => res.data),
+  updateTicket: (id, status) => api.put(`/support/tickets/${id}?status=${status}`).then(res => res.data),
+  deleteTicket: (id) => api.delete(`/support/tickets/${id}`).then(res => res.data),
 };
 
 // =================== PROFESSIONAL ===================
 export const proAPI = {
-  getProfile: (id) => request('GET', `/professional/${id}`),
-  getServices: (proId) => request('GET', `/professional/services/${proId}`),
-  addService: (service) => request('POST', '/professional/services', service),
-  getBookings: (proId) => request('GET', `/professional/bookings/${proId}`),
-  getEarnings: () => request('GET', '/professional/earnings'),
+  getProfile: (id) => api.get(`/professional/${id}`).then(res => res.data),
+  getServices: (proId) => api.get(`/professional/services/${proId}`).then(res => res.data),
+  addService: (service) => api.post('/professional/services', service).then(res => res.data),
+  getBookings: (proId) => api.get(`/professional/bookings/${proId}`).then(res => res.data),
+  getEarnings: () => api.get('/professional/earnings').then(res => res.data),
 };
 
 // =================== FEEDBACK ===================
 export const feedbackAPI = {
-  getAll: () => request('GET', '/feedback'),
-  getByPro: (proId) => request('GET', `/feedback/professional/${proId}`),
-  add: (feedback) => request('POST', '/feedback', feedback),
+  getAll: () => api.get('/feedback').then(res => res.data),
+  getByPro: (proId) => api.get(`/feedback/professional/${proId}`).then(res => res.data),
+  add: (feedback) => api.post('/feedback', feedback).then(res => res.data),
 };
 
 // =================== MESSAGES ===================
 export const messageAPI = {
-  send: (message) => request('POST', '/messages', message),
-  getByUser: (userId) => request('GET', `/messages/user/${userId}`),
+  send: (message) => api.post('/messages', message).then(res => res.data),
+  getByUser: (userId) => api.get(`/messages/user/${userId}`).then(res => res.data),
 };

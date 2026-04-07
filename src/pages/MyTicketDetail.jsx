@@ -2,10 +2,9 @@ import { useState } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import { useTickets } from '../context/TicketContext';
-import Layout from '../components/Layout';
 import '../styles/Services.css';
 
-const MyTicketDetailContent = () => {
+const MyTicketDetail = () => {
   const location = useLocation();
   const navigate = useNavigate();
   const { user } = useAuth();
@@ -118,10 +117,6 @@ const MyTicketDetailContent = () => {
   );
 };
 
-const MyTicketDetail = () => (
-  <Layout>
-    <MyTicketDetailContent />
-  </Layout>
-);
+
 
 export default MyTicketDetail;

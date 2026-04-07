@@ -1,8 +1,7 @@
 import { useState } from 'react';
-import Layout from '../components/Layout';
 import '../styles/Dashboard.css';
 
-const AnalyticsContent = () => {
+const Analytics = () => {
   const barData = [30, 45, 60, 25, 80, 55, 40];
   const days = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
 
@@ -82,10 +81,6 @@ const AnalyticsContent = () => {
   );
 };
 
-const Analytics = () => (
-  <Layout>
-    <AnalyticsContent />
-  </Layout>
-);
+
 
 export default Analytics;

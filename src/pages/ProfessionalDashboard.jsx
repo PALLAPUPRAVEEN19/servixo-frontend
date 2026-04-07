@@ -1,25 +1,30 @@
 import { useState, useEffect } from 'react';
-import axios from 'axios';
 import { useAuth } from '../context/AuthContext';
-import Layout from '../components/Layout';
+import { serviceAPI } from '../services/api';
 import Toast from '../components/Toast';
 
-const ProfessionalDashboardContent = () => {
+const ProfessionalDashboard = () => {
   const { user } = useAuth();
-  const [formData, setFormData] = useState({ title: '', description: '', price: '' });
+  const [formData, setFormData] = useState({ name: '', description: '', price: '' });
   const [services, setServices] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [toast, setToast] = useState(null);
 
-  const professionalId = user?.id;
+  const storedUser = localStorage.getItem('user') ? JSON.parse(localStorage.getItem('user')) : null;
+  const userData = user || storedUser;
+  const professionalId = userData?.id;
 
   const fetchServices = async () => {
-    if (!professionalId) return;
+    if (!professionalId) {
+      alert("Please login again");
+      window.location.href = '/login';
+      return;
+    }
     try {
       setLoading(true);
-      const res = await axios.get(`http://localhost:8080/api/services/professional/${professionalId}`);
-      setServices(res.data || []);
+      const data = await serviceAPI.getByProfessional(professionalId);
+      setServices(data || []);
     } catch (err) {
       console.error(err);
       setError('Failed to fetch services.');
@@ -34,21 +39,24 @@ const ProfessionalDashboardContent = () => {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
+    if (!professionalId) {
+      alert("Please login again");
+      window.location.href = '/login';
+      return;
+    }
+    
     try {
-      if (!professionalId) return;
       const payload = {
-        title: formData.title,
+        name: formData.name,
         description: formData.description,
         price: parseFloat(formData.price)
       };
 
-      await axios.post(`http://localhost:8080/api/services/${professionalId}`, payload, {
-        headers: { "Content-Type": "application/json" }
-      });
+      await serviceAPI.createForPro(professionalId, payload);
       
       setToast({ message: 'Service created successfully!', type: 'success' });
-      setFormData({ title: '', description: '', price: '' });
-      fetchServices(); // Refresh list to show newly added service
+      setFormData({ name: '', description: '', price: '' });
+      fetchServices();
     } catch (err) {
       console.error(err);
       setToast({ message: 'Failed to create service.', type: 'error' });
@@ -73,12 +81,12 @@ const ProfessionalDashboardContent = () => {
         <h3>Create New Service</h3>
         <form onSubmit={handleSubmit} style={{ display: 'flex', flexDirection: 'column', gap: '15px', marginTop: '15px' }}>
           <div>
-            <label style={{ display: 'block', marginBottom: '5px' }}>Title</label>
+            <label style={{ display: 'block', marginBottom: '5px' }}>Name</label>
             <input 
               type="text" 
               required
-              value={formData.title} 
-              onChange={e => setFormData({...formData, title: e.target.value})} 
+              value={formData.name} 
+              onChange={e => setFormData({...formData, name: e.target.value})} 
               style={{ width: '100%', padding: '10px', borderRadius: '5px', border: '1px solid #444', background: '#222', color: 'white' }}
             />
           </div>
@@ -129,11 +137,5 @@ const ProfessionalDashboardContent = () => {
     </div>
   );
 };
-
-const ProfessionalDashboard = () => (
-  <Layout>
-    <ProfessionalDashboardContent />
-  </Layout>
-);
 
 export default ProfessionalDashboard;

@@ -1,8 +1,9 @@
 import { useState, useEffect } from 'react';
-import axios from 'axios';
-import Layout from '../components/Layout';
+import { useNavigate } from 'react-router-dom';
+import { serviceAPI } from '../services/api';
 
-const UserServicesContent = () => {
+const UserServices = () => {
+  const navigate = useNavigate();
   const [services, setServices] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
@@ -12,12 +13,13 @@ const UserServicesContent = () => {
     try {
       setLoading(true);
       setError(null);
-      const url = searchKeyword.trim() 
-        ? `http://localhost:8080/api/services/search?keyword=${encodeURIComponent(searchKeyword)}` 
-        : 'http://localhost:8080/api/services';
-        
-      const res = await axios.get(url);
-      setServices(res.data || []);
+      let data;
+      if (searchKeyword.trim()) {
+        data = await serviceAPI.search(searchKeyword);
+      } else {
+        data = await serviceAPI.getApproved();
+      }
+      setServices(data || []);
     } catch (err) {
       console.error(err);
       setError('Failed to fetch services.');
@@ -38,6 +40,10 @@ const UserServicesContent = () => {
     if (s === 'PENDING') return { backgroundColor: '#eab308', color: 'white', padding: '4px 8px', borderRadius: '12px', fontSize: '0.75rem', fontWeight: 'bold' };
     if (s === 'APPROVED') return { backgroundColor: '#22c55e', color: 'white', padding: '4px 8px', borderRadius: '12px', fontSize: '0.75rem', fontWeight: 'bold' };
     return { backgroundColor: '#6b7280', color: 'white', padding: '4px 8px', borderRadius: '12px', fontSize: '0.75rem', fontWeight: 'bold' };
+  };
+
+  const handleHire = (service) => {
+    navigate(`/user/booking/${service.id}`, { state: { service } });
   };
 
   return (
@@ -73,7 +79,7 @@ const UserServicesContent = () => {
               <p style={{ color: '#aaa', fontSize: '0.9rem', flexGrow: 1, marginBottom: '20px' }}>{service.description}</p>
               <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', borderTop: '1px solid #333', paddingTop: '15px' }}>
                 <span style={{ fontWeight: 'bold', fontSize: '1.2rem', color: '#3b82f6' }}>${service.price}</span>
-                <button style={{ padding: '8px 16px', background: '#3b82f6', color: 'white', border: 'none', borderRadius: '5px', cursor: 'pointer', fontWeight: 'bold' }}>
+                <button onClick={() => handleHire(service)} style={{ padding: '8px 16px', background: '#3b82f6', color: 'white', border: 'none', borderRadius: '5px', cursor: 'pointer', fontWeight: 'bold' }}>
                   Hire Now
                 </button>
               </div>
@@ -84,11 +90,5 @@ const UserServicesContent = () => {
     </div>
   );
 };
-
-const UserServices = () => (
-  <Layout>
-    <UserServicesContent />
-  </Layout>
-);
 
 export default UserServices;

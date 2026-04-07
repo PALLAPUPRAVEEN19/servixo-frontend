@@ -1,19 +1,27 @@
 import { useState, useEffect } from 'react';
+import { Link } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import { bookingAPI } from '../services/api';
-import Layout from '../components/Layout';
 import '../styles/Services.css';
 
-const BookingsContent = () => {
+const Bookings = () => {
   const { user } = useAuth();
   const [bookings, setBookings] = useState([]);
   const [loading, setLoading] = useState(true);
 
+  const storedUser = localStorage.getItem("user") ? JSON.parse(localStorage.getItem("user")) : null;
+  const userData = user || storedUser;
+  const userId = userData?.id;
+
+  if (!userId && !storedUser) {
+    alert("Session expired. Please login again");
+    window.location.href = "/login";
+  }
+
   useEffect(() => {
     const fetchBookings = async () => {
-      if (!user?.id) return;
       try {
-        const data = await bookingAPI.getByUser(user.id);
+        const data = await bookingAPI.getByUser(userId);
         setBookings(data || []);
       } catch (err) {
         console.error('Failed to fetch bookings:', err);
@@ -21,12 +29,32 @@ const BookingsContent = () => {
         setLoading(false);
       }
     };
-    fetchBookings();
-  }, [user?.id]);
+    if (userId) {
+      fetchBookings();
+    }
+  }, [userId]);
 
   const formatDate = (dateStr) => {
     if (!dateStr) return 'N/A';
     return new Date(dateStr).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
+  };
+
+  const handleCancel = async (bookingId) => {
+    try {
+      await bookingAPI.updateStatus(bookingId, 'CANCELLED');
+      setBookings(bookings.map(b => b.id === bookingId ? { ...b, status: 'CANCELLED' } : b));
+    } catch (err) {
+      console.error('Failed to cancel booking:', err);
+      alert("Failed to cancel booking.");
+    }
+  };
+
+  const getStatusStyle = (status) => {
+    const s = status?.toUpperCase() || 'PENDING';
+    if (s === 'COMPLETED') return { background: '#3b82f6', color: 'white' };
+    if (s === 'CONFIRMED' || s === 'APPROVED') return { background: '#22c55e', color: 'white' };
+    if (s === 'REJECTED' || s === 'CANCELLED') return { background: '#ef4444', color: 'white' };
+    return { background: '#eab308', color: 'white' };
   };
 
   return (
@@ -60,29 +88,33 @@ const BookingsContent = () => {
                   <td style={{ padding: '20px' }}>{formatDate(booking.bookingTime)}</td>
                   <td style={{ padding: '20px' }}>
                     <span style={{ 
-                      padding: '4px 10px', 
-                      borderRadius: '6px', 
+                      padding: '6px 12px', 
+                      borderRadius: '8px', 
                       fontSize: '0.8rem', 
-                      fontWeight: '700',
-                      background: (booking.status === 'COMPLETED' || booking.status === 'APPROVED') ? 'var(--success)' : 
-                                  booking.status === 'PENDING' ? 'var(--primary-glow)' : 
-                                  'rgba(255, 0, 0, 0.1)',
-                      color: (booking.status === 'COMPLETED' || booking.status === 'APPROVED') ? 'white' : 
-                             booking.status === 'PENDING' ? 'var(--primary)' : 
-                             'var(--error)'
+                      fontWeight: 'bold',
+                      ...getStatusStyle(booking.status)
                     }}>
-                      {booking.status || 'PENDING'}
+                      {booking.status?.toUpperCase() || 'PENDING'}
                     </span>
                   </td>
                   <td style={{ padding: '20px', display: 'flex', gap: '10px' }}>
                     <button className="btn" style={{ padding: '8px 12px', fontSize: '0.8rem', background: 'rgba(255, 255, 255, 0.05)' }}>View</button>
+                    {(booking.status?.toUpperCase() === 'PENDING') && (
+                      <button 
+                        className="btn" 
+                        style={{ padding: '8px 12px', fontSize: '0.8rem', background: 'rgba(239, 68, 68, 0.2)', color: '#ef4444', border: '1px solid #ef4444' }}
+                        onClick={() => handleCancel(booking.id)}
+                      >
+                        Cancel
+                      </button>
+                    )}
                   </td>
                 </tr>
               ))
             ) : (
               <tr>
                 <td colSpan="5" style={{ padding: '40px', textAlign: 'center', color: 'var(--text-dim)' }}>
-                  No bookings found. <a href="/services" style={{ color: 'var(--primary)', textDecoration: 'none' }}>Book a service?</a>
+                  No bookings found. <Link to="/user/services" style={{ color: 'var(--primary)', textDecoration: 'none' }}>Book a service?</Link>
                 </td>
               </tr>
             )}
@@ -92,11 +124,5 @@ const BookingsContent = () => {
     </div>
   );
 };
-
-const Bookings = () => (
-  <Layout>
-    <BookingsContent />
-  </Layout>
-);
 
 export default Bookings;

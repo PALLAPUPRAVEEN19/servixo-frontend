@@ -1,9 +1,8 @@
 import { useState } from 'react';
 import { useAuth } from '../context/AuthContext';
-import Layout from '../components/Layout';
 import '../styles/Profile.css';
 
-const ProfileContent = () => {
+const Profile = () => {
   const { user } = useAuth();
   const [formData, setFormData] = useState({
     name: user?.name || '',
@@ -101,10 +100,6 @@ const ProfileContent = () => {
   );
 };
 
-const Profile = () => (
-  <Layout>
-    <ProfileContent />
-  </Layout>
-);
+
 
 export default Profile;

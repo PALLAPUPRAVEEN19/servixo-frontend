@@ -26,12 +26,36 @@ const Navbar = () => {
     navigate('/login');
   };
 
+  // Determine correct paths based on role
+  const userRole = (typeof user?.role === 'string' ? user.role : user?.role?.name || '').toLowerCase();
+
+  const getProfilePath = () => {
+    if (userRole === 'professional') return '/professional/profile';
+    if (userRole === 'admin') return '/admin/settings';
+    if (userRole === 'support') return '/support/analytics';
+    return '/user/profile';
+  };
+
+  const getSettingsPath = () => {
+    if (userRole === 'admin') return '/admin/settings';
+    if (userRole === 'professional') return '/professional/profile';
+    if (userRole === 'support') return '/support/kb';
+    return '/user/settings';
+  };
+
+  const getHelpPath = () => {
+    if (userRole === 'support') return '/support/kb';
+    if (userRole === 'admin') return '/admin/tickets';
+    if (userRole === 'professional') return '/professional/messages';
+    return '/user/tickets';
+  };
+
   return (
     <nav className="navbar glass">
       <div className="navbar-right">
         <div className="profile-container" ref={dropdownRef}>
-          <div 
-            className={`profile-icon ${isDropdownOpen ? 'active' : ''}`} 
+          <div
+            className={`profile-icon ${isDropdownOpen ? 'active' : ''}`}
             onClick={toggleDropdown}
             title={user?.name || 'User Profile'}
           >
@@ -49,26 +73,26 @@ const Navbar = () => {
                   <span className="user-email">{user?.email}</span>
                 </div>
               </div>
-              
+
               <div className="dropdown-divider"></div>
-              
+
               <div className="dropdown-links">
-                <Link 
-                  to={user?.role === 'professional' || user?.role?.name === 'PROFESSIONAL' ? '/professional/profile' : '/dashboard/profile'} 
+                <Link
+                  to={getProfilePath()}
                   className="dropdown-link"
                   onClick={() => setIsDropdownOpen(false)}
                 >
                   <span className="link-icon">👤</span> My Profile
                 </Link>
-                <Link 
-                  to={user?.role === 'admin' || user?.role?.name === 'ADMIN' ? '/admin/settings' : '/dashboard/settings'} 
+                <Link
+                  to={getSettingsPath()}
                   className="dropdown-link"
                   onClick={() => setIsDropdownOpen(false)}
                 >
                   <span className="link-icon">⚙️</span> Settings
                 </Link>
-                <Link 
-                  to={user?.role === 'support' || user?.role?.name === 'SUPPORT' ? '/support/kb' : '/dashboard/tickets'} 
+                <Link
+                  to={getHelpPath()}
                   className="dropdown-link"
                   onClick={() => setIsDropdownOpen(false)}
                 >
@@ -77,7 +101,7 @@ const Navbar = () => {
               </div>
 
               <div className="dropdown-divider"></div>
-              
+
               <div className="dropdown-footer">
                 <button className="dropdown-logout-btn" onClick={handleLogout}>
                   Sign Out

@@ -1,9 +1,8 @@
 import { useState, useEffect } from 'react';
-import axios from 'axios';
-import Layout from '../components/Layout';
+import { ticketAPI } from '../services/api';
 import Toast from '../components/Toast';
 
-const SupportPanelContent = () => {
+const SupportPanel = () => {
   const [tickets, setTickets] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
@@ -12,8 +11,8 @@ const SupportPanelContent = () => {
   const fetchTickets = async () => {
     try {
       setLoading(true);
-      const res = await axios.get('http://localhost:8080/api/tickets');
-      setTickets(res.data || []);
+      const data = await ticketAPI.getAll();
+      setTickets(data || []);
     } catch (err) {
       console.error(err);
       setError('Failed to fetch tickets.');
@@ -28,9 +27,7 @@ const SupportPanelContent = () => {
 
   const handleStatusChange = async (id, newStatus) => {
     try {
-      // The API endpoint specified is PUT /api/tickets/{id}?status=value
-      await axios.put(`http://localhost:8080/api/tickets/${id}?status=${newStatus}`);
-      
+      await ticketAPI.updateStatus(id, newStatus);
       setToast({ message: `Ticket status updated to ${newStatus}`, type: 'success' });
       setTickets(prev => prev.map(t => t.id === id ? { ...t, status: newStatus } : t));
     } catch (err) {
@@ -107,11 +104,5 @@ const SupportPanelContent = () => {
     </div>
   );
 };
-
-const SupportPanel = () => (
-  <Layout>
-    <SupportPanelContent />
-  </Layout>
-);
 
 export default SupportPanel;

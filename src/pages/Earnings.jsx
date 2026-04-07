@@ -1,10 +1,9 @@
 import { useState, useEffect } from 'react';
-import Layout from '../components/Layout';
 import '../styles/Services.css';
 import { useAuth } from '../context/AuthContext';
 import { proAPI } from '../services/api';
 
-const EarningsContent = () => {
+const Earnings = () => {
   const { user } = useAuth();
   const [payouts, setPayouts] = useState([]);
   const [totalBalance, setTotalBalance] = useState(0);
@@ -85,10 +84,6 @@ const EarningsContent = () => {
   );
 };
 
-const Earnings = () => (
-  <Layout>
-    <EarningsContent />
-  </Layout>
-);
+
 
 export default Earnings;

@@ -2,7 +2,6 @@ import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import axios from 'axios';
 import { useAuth } from '../context/AuthContext';
-import Layout from '../components/Layout';
 import '../styles/Services.css';
 
 const statusColors = {
@@ -12,7 +11,7 @@ const statusColors = {
   closed: { bg: 'rgba(255, 255, 255, 0.08)', color: 'var(--text-dim)' }
 };
 
-const MyTicketsContent = () => {
+const MyTickets = () => {
   const navigate = useNavigate();
   const { user } = useAuth();
   
@@ -30,10 +29,7 @@ const MyTicketsContent = () => {
       console.log("USER ID:", user.id);
       
       try {
-        const token = localStorage.getItem('token') || '';
-        const res = await axios.get(`/api/tickets/user/${user.id}`, {
-          headers: { Authorization: `Bearer ${token}` }
-        });
+        const res = await axios.get(`/api/tickets/user/${user.id}`);
         
         console.log("TICKETS:", res.data);
         setTickets(res.data || []);
@@ -163,10 +159,6 @@ const MyTicketsContent = () => {
   );
 };
 
-const MyTickets = () => (
-  <Layout>
-    <MyTicketsContent />
-  </Layout>
-);
+
 
 export default MyTickets;

@@ -1,24 +1,21 @@
 import { useState, useEffect } from 'react';
 import axios from 'axios';
-import Layout from '../components/Layout';
 import Toast from '../components/Toast';
 
-const ManageServicesContent = () => {
+const ManageServices = () => {
   const [services, setServices] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [toast, setToast] = useState(null);
 
-  const getToken = () => localStorage.getItem('token') || '';
+
 
   useEffect(() => {
     const fetchServices = async () => {
       try {
         setLoading(true);
         // Ensure correct base URL is used; fixing the localhost:5173 to 8080 issue
-        const response = await axios.get('http://localhost:8080/api/services/all', {
-          headers: { Authorization: `Bearer ${getToken()}` },
-        });
+        const response = await axios.get('http://localhost:8080/api/services/all');
         setServices(response.data || []);
       } catch (err) {
         console.error('Failed to fetch services:', err);
@@ -32,9 +29,7 @@ const ManageServicesContent = () => {
 
   const handleApprove = async (id) => {
     try {
-      await axios.put(`http://localhost:8080/api/services/approve/${id}`, null, {
-        headers: { Authorization: `Bearer ${getToken()}` },
-      });
+      await axios.put(`http://localhost:8080/api/services/approve/${id}`, null);
       // Update local state instantly to show APPROVED without refresh
       setServices((prev) =>
         prev.map((s) => (s.id === id ? { ...s, status: 'APPROVED' } : s))
@@ -49,9 +44,7 @@ const ManageServicesContent = () => {
   const handleReject = async (id) => {
     try {
       // Using DELETE from ServiceController for rejecting/deleting an unwanted service
-      await axios.delete(`http://localhost:8080/api/services/${id}`, {
-        headers: { Authorization: `Bearer ${getToken()}` },
-      });
+      await axios.delete(`http://localhost:8080/api/services/${id}`);
       // Update local state instantly without refresh
       setServices((prev) =>
         prev.map((s) => (s.id === id ? { ...s, status: 'REJECTED' } : s))
@@ -222,10 +215,6 @@ const ManageServicesContent = () => {
   );
 };
 
-const ManageServices = () => (
-  <Layout>
-    <ManageServicesContent />
-  </Layout>
-);
+
 
 export default ManageServices;

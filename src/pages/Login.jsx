@@ -46,7 +46,7 @@ const Login = () => {
       } else if (normalizedRole === "SUPPORT") {
         navigate("/support");
       } else {
-        navigate("/dashboard");
+        navigate("/user/dashboard");
       }
     } catch (err) {
       setError(err.message || 'Login failed. Please check your credentials.');

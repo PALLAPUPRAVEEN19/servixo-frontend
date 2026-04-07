@@ -2,13 +2,12 @@ import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import axios from 'axios';
 import { useAuth } from '../context/AuthContext';
-import Layout from '../components/Layout';
 import Toast from '../components/Toast';
 import '../styles/Profile.css';
 
 const categories = ['Payment Issue', 'Technical Problem', 'Account Issue', 'Service Complaint', 'Booking Problem', 'Other'];
 
-const RaiseTicketContent = () => {
+const RaiseTicket = () => {
   const navigate = useNavigate();
   const { user } = useAuth();
   
@@ -46,12 +45,8 @@ const RaiseTicketContent = () => {
         category: formData.category
       };
       
-      const token = localStorage.getItem('token') || '';
-      
       // 1. API Integration & Mapping
-      await axios.post(`/api/tickets?userId=${user.id}`, payload, {
-        headers: { Authorization: `Bearer ${token}` }
-      });
+      await axios.post(`/api/tickets?userId=${user.id}`, payload);
       
       // 5. Success handling
       setToast({ message: "Ticket submitted successfully", type: "success" });
@@ -150,10 +145,6 @@ const RaiseTicketContent = () => {
   );
 };
 
-const RaiseTicket = () => (
-  <Layout>
-    <RaiseTicketContent />
-  </Layout>
-);
+
 
 export default RaiseTicket;
